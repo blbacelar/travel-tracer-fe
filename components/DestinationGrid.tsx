@@ -1,53 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { COLORS, SPACING } from '../constants/theme';
+import DestinationCard from './DestinationCard';
 
 // Calculate item width based on screen width
 const { width } = Dimensions.get('window');
 const COLUMN_GAP = SPACING.md;
 const CARD_WIDTH = (width - SPACING.md * 3) / 2; // subtract padding and gap
-
-type DestinationCardProps = {
-  image: string;
-  name: string;
-  location: string;
-  isFavorite?: boolean;
-  onPress: () => void;
-  onFavoritePress: () => void;
-};
-
-const DestinationCard = ({ 
-  image, 
-  name, 
-  location, 
-  isFavorite, 
-  onPress, 
-  onFavoritePress 
-}: DestinationCardProps) => (
-  <TouchableOpacity style={styles.card} onPress={onPress}>
-    <Image source={{ uri: image }} style={styles.image} />
-    <TouchableOpacity 
-      style={styles.favoriteButton} 
-      onPress={onFavoritePress}
-    >
-      <Feather 
-        name={isFavorite ? "heart" : "heart"} 
-        size={20} 
-        color={isFavorite ? COLORS.primary : COLORS.background} 
-      />
-    </TouchableOpacity>
-    <View style={styles.cardContent}>
-      <Text style={styles.cardTitle} numberOfLines={1}>{name}</Text>
-      <View style={styles.locationContainer}>
-        <Feather name="map-pin" size={14} color={COLORS.textLight} />
-        <Text style={styles.locationText} numberOfLines={1}>
-          {location}
-        </Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-);
 
 const DestinationGrid = () => {
   const [favorites, setFavorites] = React.useState<string[]>([]);
@@ -58,24 +17,44 @@ const DestinationGrid = () => {
       image: 'https://picsum.photos/400/500',
       name: 'Bali Resort',
       location: 'Indonesia',
+      weather: {
+        temperature: 29,
+        feelsLike: 32,
+        condition: 'sunny' as const,
+      },
     },
     {
       id: '2',
       image: 'https://picsum.photos/400/501',
       name: 'Swiss Alps Cabin',
       location: 'Switzerland',
+      weather: {
+        temperature: 12,
+        feelsLike: 10,
+        condition: 'partly-cloudy' as const,
+      },
     },
     {
       id: '3',
       image: 'https://picsum.photos/400/502',
       name: 'Santorini Villa',
       location: 'Greece',
+      weather: {
+        temperature: 25,
+        feelsLike: 26,
+        condition: 'sunny' as const,
+      },
     },
     {
       id: '4',
       image: 'https://picsum.photos/400/503',
       name: 'Maldives Resort',
       location: 'Maldives',
+      weather: {
+        temperature: 27,
+        feelsLike: 29,
+        condition: 'cloudy' as const,
+      },
     },
   ];
 
@@ -102,6 +81,8 @@ const DestinationGrid = () => {
             image={destination.image}
             name={destination.name}
             location={destination.location}
+            weather={destination.weather}
+            width={CARD_WIDTH}
             isFavorite={favorites.includes(destination.id)}
             onPress={() => console.log('Navigate to destination', destination.id)}
             onFavoritePress={() => toggleFavorite(destination.id)}
@@ -139,44 +120,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     gap: COLUMN_GAP,
   },
-  card: {
-    width: CARD_WIDTH,
-    backgroundColor: COLORS.background,
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: SPACING.md,
-  },
-  image: {
-    width: '100%',
-    height: CARD_WIDTH * 1.2,
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    padding: SPACING.xs,
-  },
-  cardContent: {
-    padding: SPACING.sm,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textDark,
-    marginBottom: SPACING.xs,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationText: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginLeft: SPACING.xs,
-    flex: 1,
-  },
 });
 
-export default DestinationGrid; 
+export default DestinationGrid;
