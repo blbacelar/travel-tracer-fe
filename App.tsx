@@ -1,13 +1,17 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, SafeAreaView } from 'react-native';
 import MainScreen from './screens/MainScreen';
+import { LocationProvider } from './context/LocationContext';
+import './config/env';
 
 export default function App() {
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <MainScreen />
-    </SafeAreaView>
+    <LocationProvider>
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <MainScreen />
+      </SafeAreaView>
+    </LocationProvider>
   );
 }
 

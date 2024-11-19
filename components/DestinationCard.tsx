@@ -1,118 +1,189 @@
-import React from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../constants/theme';
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { COLORS, SPACING } from "../constants/theme";
+import { Location } from "../types/api";
+import { getCityImage } from "../services/unsplash";
 
-type WeatherInfo = {
-  temperature: number;
-  feelsLike: number;
-  condition: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'partly-cloudy';
-};
+interface DestinationCardProps {
+  location: Location;
+  onPress?: () => void;
+}
 
-export type DestinationCardProps = {
-  image: string;
-  name: string;
-  location: string;
-  weather: WeatherInfo;
-  isFavorite?: boolean;
-  width: number;
-  onPress: () => void;
-  onFavoritePress: () => void;
-};
+const DestinationCard: React.FC<DestinationCardProps> = ({
+  location,
+  onPress,
+}) => {
+  const { city, state, country, distance, weather } = location;
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
 
-const getWeatherIcon = (condition: WeatherInfo['condition']) => {
-  const icons = {
-    'sunny': 'sun',
-    'cloudy': 'cloud',
-    'rainy': 'cloud-rain',
-    'stormy': 'cloud-lightning',
-    'partly-cloudy': 'cloud-drizzle'
+  useEffect(() => {
+    const fetchImage = async () => {
+      setIsLoading(true);
+      try {
+        const url = await getCityImage(city, country);
+        setImageUrl(url);
+      } catch (error) {
+        console.error("Error loading image:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchImage();
+  }, [city, country]);
+
+  const handleFavoritePress = () => {
+    setIsFavorite(!isFavorite);
   };
-  return icons[condition];
+
+  console.log("🚀 Weather:", weather);
+  if (!weather) {
+    return null;
+  }
+
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress}>
+      {isLoading ? (
+        <View style={styles.imagePlaceholder}>
+          <ActivityIndicator size="small" color={COLORS.primary} />
+        </View>
+      ) : imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.imagePlaceholder}>
+          <Feather name="image" size={24} color={COLORS.textLight} />
+        </View>
+      )}
+
+      {/* Favorite Button */}
+      <TouchableOpacity
+        style={[
+          styles.favoriteButton,
+          isFavorite && styles.favoriteButtonActive,
+        ]}
+        onPress={handleFavoritePress}
+      >
+        <Feather
+          name="heart"
+          size={20}
+          color={isFavorite ? COLORS.primary : COLORS.textDark}
+        />
+      </TouchableOpacity>
+
+      {/* Weather Badge */}
+      <View style={styles.weatherBadge}>
+        <Feather
+          name={getWeatherIcon(weather.condition)}
+          size={16}
+          color={COLORS.textDark}
+        />
+        <Text style={styles.temperature}>{weather.temperature}°</Text>
+      </View>
+
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {city}
+        </Text>
+        <View style={styles.locationContainer}>
+          <Feather name="map-pin" size={14} color={COLORS.textLight} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {state}, {country}
+          </Text>
+        </View>
+        <View style={styles.weatherContainer}>
+          <Feather name="navigation" size={14} color={COLORS.textLight} />
+          <Text style={styles.weatherText}>{distance}km away</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 };
 
-const DestinationCard = ({ 
-  image, 
-  name, 
-  location, 
-  weather,
-  isFavorite, 
-  width,
-  onPress, 
-  onFavoritePress 
-}: DestinationCardProps) => (
-  <TouchableOpacity style={[styles.card, { width }]} onPress={onPress}>
-    <Image source={{ uri: image }} style={[styles.image, { height: width * 1.2 }]} />
-    <TouchableOpacity 
-      style={styles.favoriteButton} 
-      onPress={onFavoritePress}
-    >
-      <Feather 
-        name={isFavorite ? "heart" : "heart"} 
-        size={20} 
-        color={isFavorite ? COLORS.primary : COLORS.background} 
-      />
-    </TouchableOpacity>
-    
-    {/* Weather Badge */}
-    <View style={styles.weatherBadge}>
-      <Feather 
-        name={getWeatherIcon(weather.condition)} 
-        size={16} 
-        color={COLORS.textDark}
-      />
-      <Text style={styles.temperature}>{weather.temperature}°</Text>
-    </View>
-
-    <View style={styles.cardContent}>
-      <Text style={styles.cardTitle} numberOfLines={1}>{name}</Text>
-      <View style={styles.locationContainer}>
-        <Feather name="map-pin" size={14} color={COLORS.textLight} />
-        <Text style={styles.locationText} numberOfLines={1}>
-          {location}
-        </Text>
-      </View>
-      
-      {/* Weather Details */}
-      <View style={styles.weatherContainer}>
-        <Feather 
-          name="thermometer" 
-          size={14} 
-          color={COLORS.textLight}
-        />
-        <Text style={styles.weatherText}>
-          Feels like {weather.feelsLike}°
-        </Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-);
+const getWeatherIcon = (condition: string): keyof typeof Feather.glyphMap => {
+  const normalizedCondition = condition.toLowerCase();
+  switch (normalizedCondition) {
+    case "clear":
+      return "sun";
+    case "partly cloudy":
+      return "cloud";
+    case "cloudy":
+      return "cloud";
+    case "rain":
+      return "cloud-rain";
+    case "snow":
+      return "cloud-snow";
+    default:
+      return "cloud";
+  }
+};
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.background,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: SPACING.md,
+    width: "48%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   image: {
-    width: '100%',
+    width: "100%",
+    height: 160,
+  },
+  imagePlaceholder: {
+    width: "100%",
+    height: 160,
+    backgroundColor: COLORS.border,
+    justifyContent: "center",
+    alignItems: "center",
   },
   favoriteButton: {
-    position: 'absolute',
+    position: "absolute",
     top: SPACING.sm,
     right: SPACING.sm,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: "rgba(255,255,255,0.9)",
     borderRadius: 20,
     padding: SPACING.xs,
+    zIndex: 1,
+  },
+  favoriteButtonActive: {
+    backgroundColor: "rgba(255,255,255,1)",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   weatherBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: SPACING.sm,
     left: SPACING.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.9)",
     borderRadius: 20,
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
@@ -120,7 +191,7 @@ const styles = StyleSheet.create({
   },
   temperature: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
   },
   cardContent: {
@@ -128,13 +199,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
     marginBottom: SPACING.xs,
   },
   locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: SPACING.xs,
   },
   locationText: {
@@ -144,8 +215,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   weatherContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: SPACING.xs,
   },
   weatherText: {
@@ -155,4 +226,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DestinationCard; 
+export default DestinationCard;
