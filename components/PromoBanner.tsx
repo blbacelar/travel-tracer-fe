@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
-import { COLORS, SPACING } from '../constants/theme';
+import React from "react";
+import { StyleSheet, View, Text, TouchableOpacity, Image } from "react-native";
+import { COLORS, SPACING } from "../constants/theme";
 
 const PromoBanner = () => {
   return (
@@ -14,8 +14,8 @@ const PromoBanner = () => {
           <Text style={styles.buttonText}>Discover Now</Text>
         </TouchableOpacity>
       </View>
-      <Image 
-        source={require('../assets/images/travelers.png')}
+      <Image
+        source={require("../assets/images/travelers.png")}
         style={styles.image}
         resizeMode="contain"
       />
@@ -25,13 +25,14 @@ const PromoBanner = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: COLORS.mint,
     borderRadius: 16,
     marginHorizontal: SPACING.md,
     marginVertical: SPACING.sm,
     padding: SPACING.md,
-    overflow: 'hidden',
+    overflow: "hidden",
+    marginBottom: SPACING.md,
   },
   contentContainer: {
     flex: 1,
@@ -39,7 +40,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.textDark,
     marginBottom: SPACING.xs,
   },
@@ -53,17 +54,17 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: 8,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   buttonText: {
     color: COLORS.background,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   image: {
     width: 120,
-    height: '100%',
+    height: "100%",
   },
 });
 
-export default PromoBanner; 
+export default PromoBanner;

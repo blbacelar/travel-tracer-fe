@@ -1,121 +1,112 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../constants/theme';
+import { FeatherIconName } from '../types/api';
 
-type CategoryItemProps = {
-  icon: keyof typeof Feather.glyphMap;
+interface CategoryItemProps {
   label: string;
+  icon: FeatherIconName;
   isActive?: boolean;
-  onPress: () => void;
-};
+  onPress?: () => void;
+}
 
-const CategoryItem = ({ icon, label, isActive, onPress }: CategoryItemProps) => (
-  <TouchableOpacity 
-    style={[
-      styles.categoryItem,
-      isActive && styles.categoryItemActive
-    ]}
+const CATEGORIES: CategoryItemProps[] = [
+  {
+    label: 'All',
+    icon: 'grid',
+  },
+  {
+    label: 'Popular',
+    icon: 'star',
+  },
+  {
+    label: 'Trending',
+    icon: 'trending-up',
+  },
+  {
+    label: 'Featured',
+    icon: 'award',
+  },
+  {
+    label: 'Nearby',
+    icon: 'navigation',
+  },
+];
+
+const CategoryItem: React.FC<CategoryItemProps> = ({
+  label,
+  icon,
+  isActive = false,
+  onPress,
+}) => (
+  <TouchableOpacity
+    style={[styles.categoryItem, isActive && styles.categoryItemActive]}
     onPress={onPress}
   >
-    <Feather 
-      name={icon} 
-      size={24} 
-      color={isActive ? COLORS.background : COLORS.textDark}
+    <Feather
+      name={icon}
+      size={20}
+      color={isActive ? COLORS.primary : COLORS.textLight}
     />
-    <Text style={[
-      styles.categoryLabel,
-      isActive && styles.categoryLabelActive
-    ]}>
+    <Text
+      style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}
+    >
       {label}
     </Text>
   </TouchableOpacity>
 );
 
-const CategoryFilter = () => {
-  const [activeCategory, setActiveCategory] = React.useState('all');
-
-  const categories = [
-    { id: 'all', icon: 'grid', label: 'All' },
-    { id: 'villas', icon: 'home', label: 'Villas' },
-    { id: 'hotels', icon: 'bookmark', label: 'Hotels' },
-    { id: 'apartments', icon: 'archive', label: 'Apartments' },
-  ];
+const CategoryFilter: React.FC = () => {
+  const [activeCategory, setActiveCategory] = React.useState('All');
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Categories</Text>
-        <TouchableOpacity>
-          <Text style={styles.seeAll}>See All</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {categories.map((category) => (
-          <CategoryItem
-            key={category.id}
-            icon={category.icon}
-            label={category.label}
-            isActive={activeCategory === category.id}
-            onPress={() => setActiveCategory(category.id)}
-          />
-        ))}
-      </ScrollView>
-    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.container}
+    >
+      {CATEGORIES.map((category) => (
+        <CategoryItem
+          key={category.label}
+          {...category}
+          isActive={activeCategory === category.label}
+          onPress={() => setActiveCategory(category.label)}
+        />
+      ))}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: SPACING.sm,
-  },
-  header: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    gap: SPACING.sm,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.textDark,
-  },
-  seeAll: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  scrollContent: {
-    paddingHorizontal: SPACING.md,
   },
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    marginRight: SPACING.sm,
-    borderRadius: 12,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: 20,
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
+    gap: SPACING.xs,
   },
   categoryItemActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '10',
     borderColor: COLORS.primary,
   },
   categoryLabel: {
-    marginLeft: SPACING.xs,
     fontSize: 14,
-    color: COLORS.textDark,
-    fontWeight: '500',
+    color: COLORS.textLight,
   },
   categoryLabelActive: {
-    color: COLORS.background,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
 });
 

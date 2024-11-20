@@ -163,7 +163,7 @@ const SearchBar = () => {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   searchContainer: {
     flexDirection: 'row',

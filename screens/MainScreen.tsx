@@ -27,7 +27,11 @@ export default function MainScreen() {
       <Header username="John" />
       <SearchBar />
       <PromoBanner />
-      <CategoryFilter />
+
+      <View style={styles.header}>
+        <Text style={styles.title}>Destinations</Text>
+      </View>
+
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
@@ -94,6 +98,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: SPACING.xs,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.textDark,
   },
   list: {
     padding: SPACING.md,

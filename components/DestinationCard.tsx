@@ -66,7 +66,7 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
   }
 
   return (
-    <TouchableOpacity style={styles.card} onPress={handlePress} >
+    <TouchableOpacity style={styles.card} onPress={handlePress}>
       {isLoading ? (
         <View style={styles.imagePlaceholder}>
           <ActivityIndicator size="small" color={COLORS.primary} />
