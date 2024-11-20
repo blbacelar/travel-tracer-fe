@@ -23,7 +23,8 @@ import BackButton from "../components/common/BackButton";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import CategoryFilter from "../components/CategoryFilter";
-import { useFavorites } from '../context/FavoritesContext';
+import { useFavorites } from "../context/FavoritesContext";
+import ReviewSection from "../components/destination/ReviewSection";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Destination">;
 
@@ -113,6 +114,13 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Weather Information */}
         <WeatherInfo weather={location.weather} />
+
+        <ReviewSection 
+          rating={4.7}
+          totalReviews={128}
+          reviews={[]}
+          locationName={location.city}
+        />
 
         <CategoryFilter />
         {/* Accommodations Section */}
@@ -215,11 +223,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   actionButtonsContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? SPACING.xl + 44 : SPACING.xl,
+    position: "absolute",
+    top: Platform.OS === "ios" ? SPACING.xl + 44 : SPACING.xl,
     right: SPACING.md,
     zIndex: 2,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: SPACING.sm,
   },
 });
