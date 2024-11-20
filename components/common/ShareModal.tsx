@@ -86,17 +86,38 @@ const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   const handleTelegramShare = async () => {
-    const telegramUrl = `tg://msg?text=${encodeURIComponent(shareText)}`;
+    const telegramMessage = encodeURIComponent(shareText);
+    
     try {
-      const canOpen = await Linking.canOpenURL(telegramUrl);
-      if (canOpen) {
-        await Linking.openURL(telegramUrl);
+      if (Platform.OS === 'android') {
+        await Linking.openURL(`tg://msg?text=${telegramMessage}`);
       } else {
-        Alert.alert('Error', 'Telegram is not installed on your device');
+        await Linking.openURL(`tg://msg?text=${telegramMessage}`);
       }
+      onClose();
     } catch (error) {
       console.error('Error opening Telegram:', error);
-      Alert.alert('Error', 'Could not open Telegram');
+      Alert.alert(
+        'Telegram Not Found',
+        'Please install Telegram to share via Telegram',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Install Telegram',
+            onPress: () => {
+              const storeUrl = Platform.select({
+                ios: 'https://apps.apple.com/app/telegram-messenger/id686449807',
+                android: 'market://details?id=org.telegram.messenger',
+                default: 'https://telegram.org/',
+              });
+              Linking.openURL(storeUrl);
+            },
+          },
+        ]
+      );
     }
   };
 
