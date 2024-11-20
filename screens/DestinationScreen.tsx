@@ -25,6 +25,7 @@ import { RootStackParamList } from "../App";
 import CategoryFilter from "../components/CategoryFilter";
 import { useFavorites } from "../context/FavoritesContext";
 import ReviewSection from "../components/destination/ReviewSection";
+import ShareModal from '../components/common/ShareModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, "Destination">;
 
@@ -32,18 +33,12 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
   const { location } = route.params;
   const { isFavorite, toggleFavorite } = useFavorites();
   const scrollY = new Animated.Value(0);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const locationId = `${location.city}-${location.latitude}-${location.longitude}`;
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `Check out ${location.city} on Travel Tracer!`,
-        title: `Visit ${location.city}`,
-      });
-    } catch (error) {
-      console.error("Error sharing:", error);
-    }
+  const handleShare = () => {
+    setShowShareModal(true);
   };
 
   const handleFavoritePress = () => {
@@ -132,6 +127,13 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
           <Text style={styles.startTripText}>Start Planning Trip</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <ShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={`Visit ${location.city}`}
+        message={`Check out ${location.city} on Travel Tracer! A beautiful destination in ${location.country}.`}
+      />
     </SafeAreaView>
   );
 };
