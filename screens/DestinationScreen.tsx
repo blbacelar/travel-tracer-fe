@@ -23,13 +23,16 @@ import BackButton from "../components/common/BackButton";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import CategoryFilter from "../components/CategoryFilter";
+import { useFavorites } from '../context/FavoritesContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, "Destination">;
 
 const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
   const { location } = route.params;
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
   const scrollY = new Animated.Value(0);
+
+  const locationId = `${location.city}-${location.latitude}-${location.longitude}`;
 
   const handleShare = async () => {
     try {
@@ -43,7 +46,7 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleFavoritePress = () => {
-    setIsFavorite(!isFavorite);
+    toggleFavorite(locationId);
   };
 
   const headerOpacity = scrollY.interpolate({
@@ -70,7 +73,7 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
       {/* Action Buttons - Moved to top right */}
       <View style={styles.actionButtonsContainer}>
         <ActionButtons
-          isFavorite={isFavorite}
+          isFavorite={isFavorite(locationId)}
           onFavoritePress={handleFavoritePress}
           onSharePress={handleShare}
         />

@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  GestureResponderEvent,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -14,6 +15,7 @@ import { COLORS, SPACING } from "../constants/theme";
 import { Location } from "../types/api";
 import { getCityImage } from "../services/unsplash";
 import { RootStackParamList } from "../App";
+import { useFavorites } from '../context/FavoritesContext';
 
 interface DestinationCardProps {
   location: Location;
@@ -27,16 +29,17 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
   onPress,
 }) => {
   const navigation = useNavigation<NavigationProp>();
-  const { city, state, country, distance, weather } = location;
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
+
+  const locationId = `${location.city}-${location.latitude}-${location.longitude}`;
 
   useEffect(() => {
     const fetchImage = async () => {
       setIsLoading(true);
       try {
-        const url = await getCityImage(city, country);
+        const url = await getCityImage(location.city, location.country);
         setImageUrl(url);
       } catch (error) {
         console.error("Error loading image:", error);
@@ -45,10 +48,11 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
       }
     };
     fetchImage();
-  }, [city, country]);
+  }, [location.city, location.country]);
 
-  const handleFavoritePress = () => {
-    setIsFavorite(!isFavorite);
+  const handleFavoritePress = (e: GestureResponderEvent) => {
+    e.stopPropagation(); // Prevent card navigation when pressing favorite
+    toggleFavorite(locationId);
   };
 
   const handlePress = () => {
@@ -60,8 +64,8 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
     });
   };
 
-  console.log("🚀 Weather:", weather);
-  if (!weather) {
+  console.log("🚀 Weather:", location.weather);
+  if (!location.weather) {
     return null;
   }
 
@@ -87,40 +91,40 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
       <TouchableOpacity
         style={[
           styles.favoriteButton,
-          isFavorite && styles.favoriteButtonActive,
+          isFavorite(locationId) && styles.favoriteButtonActive,
         ]}
         onPress={handleFavoritePress}
       >
         <Feather
           name="heart"
           size={20}
-          color={isFavorite ? COLORS.primary : COLORS.textDark}
+          color={isFavorite(locationId) ? COLORS.primary : COLORS.textDark}
         />
       </TouchableOpacity>
 
       {/* Weather Badge */}
       <View style={styles.weatherBadge}>
         <Feather
-          name={getWeatherIcon(weather.condition)}
+          name={getWeatherIcon(location.weather.condition)}
           size={16}
           color={COLORS.textDark}
         />
-        <Text style={styles.temperature}>{weather.temperature}°</Text>
+        <Text style={styles.temperature}>{location.weather.temperature}°</Text>
       </View>
 
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>
-          {city}
+          {location.city}
         </Text>
         <View style={styles.locationContainer}>
           <Feather name="map-pin" size={14} color={COLORS.textLight} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {state}, {country}
+            {location.state}, {location.country}
           </Text>
         </View>
         <View style={styles.weatherContainer}>
           <Feather name="navigation" size={14} color={COLORS.textLight} />
-          <Text style={styles.weatherText}>{distance}km away</Text>
+          <Text style={styles.weatherText}>{location.distance}km away</Text>
         </View>
       </View>
     </TouchableOpacity>

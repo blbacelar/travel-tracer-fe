@@ -7,6 +7,7 @@ import DestinationScreen from './screens/DestinationScreen';
 import { LocationProvider } from './context/LocationContext';
 import { Location } from './types/api';
 import './config/env';
+import { FavoritesProvider } from './context/FavoritesContext';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -18,17 +19,19 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function App() {
   return (
     <LocationProvider>
-      <NavigationContainer>
-        <StatusBar style="dark" />
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="Main" component={MainScreen} />
-          <Stack.Screen name="Destination" component={DestinationScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <FavoritesProvider>
+        <NavigationContainer>
+          <StatusBar style="dark" />
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="Main" component={MainScreen} />
+            <Stack.Screen name="Destination" component={DestinationScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </FavoritesProvider>
     </LocationProvider>
   );
 }
