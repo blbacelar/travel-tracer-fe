@@ -116,9 +116,7 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
         <WeatherInfo weather={location.weather} />
 
         <ReviewSection 
-          rating={4.7}
-          totalReviews={128}
-          reviews={[]}
+          locationId={locationId}
           locationName={location.city}
         />
 

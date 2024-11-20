@@ -16,6 +16,7 @@ export type RootStackParamList = {
   Destination: { location: Location };
   AllReviews: { 
     locationName: string;
+    locationId: string;
     rating: number;
     totalReviews: number;
   };
