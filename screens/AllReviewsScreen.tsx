@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,36 +12,18 @@ import { Feather } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../constants/theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
+import AddReviewModal from '../components/destination/AddReviewModal';
+import { useReviews } from '../context/ReviewsContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllReviews'>;
 
-const MOCK_REVIEWS = [
-  {
-    id: '1',
-    user: 'Sarah M.',
-    rating: 5,
-    comment: 'Amazing place! The views are breathtaking and the local food is delicious.',
-    date: '2 days ago'
-  },
-  {
-    id: '2',
-    user: 'John D.',
-    rating: 4,
-    comment: 'Great experience overall. Would definitely recommend visiting during spring.',
-    date: '1 week ago'
-  },
-  {
-    id: '3',
-    user: 'Emma W.',
-    rating: 5,
-    comment: 'Perfect destination for both adventure and relaxation. Loved every moment!',
-    date: '2 weeks ago'
-  },
-  // Add more mock reviews
-];
-
 const AllReviewsScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { locationName, rating, totalReviews } = route.params;
+  const [showAddReview, setShowAddReview] = useState(false);
+  const { locationName, locationId } = route.params;
+  const { getLocationReviews, getLocationRating, addReview } = useReviews();
+  
+  const reviews = getLocationReviews(locationId);
+  const { rating, total: totalReviews } = getLocationRating(locationId);
 
   const renderStars = (rating: number) => {
     return (
@@ -59,7 +41,7 @@ const AllReviewsScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   };
 
-  const renderReview = ({ item }: { item: typeof MOCK_REVIEWS[0] }) => (
+  const renderReview = ({ item }: { item: typeof reviews[0] }) => (
     <View style={styles.reviewCard}>
       <View style={styles.reviewHeader}>
         <Text style={styles.userName}>{item.user}</Text>
@@ -69,6 +51,10 @@ const AllReviewsScreen: React.FC<Props> = ({ navigation, route }) => {
       <Text style={styles.reviewText}>{item.comment}</Text>
     </View>
   );
+
+  const handleAddReview = (rating: number, comment: string) => {
+    addReview(locationId, rating, comment);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -92,12 +78,28 @@ const AllReviewsScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       </View>
 
+      <View style={styles.addReviewContainer}>
+        <TouchableOpacity
+          style={styles.addReviewButton}
+          onPress={() => setShowAddReview(true)}
+        >
+          <Feather name="edit-2" size={20} color={COLORS.background} />
+          <Text style={styles.addReviewButtonText}>Write a Review</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
-        data={MOCK_REVIEWS}
+        data={reviews}
         renderItem={renderReview}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.reviewsList}
         showsVerticalScrollIndicator={false}
+      />
+
+      <AddReviewModal
+        visible={showAddReview}
+        onClose={() => setShowAddReview(false)}
+        onSubmit={handleAddReview}
       />
     </SafeAreaView>
   );
@@ -193,6 +195,25 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: SPACING.xs,
     lineHeight: 20,
+  },
+  addReviewContainer: {
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  addReviewButton: {
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.sm,
+    borderRadius: 12,
+    gap: SPACING.xs,
+  },
+  addReviewButtonText: {
+    color: COLORS.background,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

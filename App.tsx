@@ -9,6 +9,7 @@ import { Location } from './types/api';
 import './config/env';
 import { FavoritesProvider } from './context/FavoritesContext';
 import AllReviewsScreen from './screens/AllReviewsScreen';
+import { ReviewsProvider } from './context/ReviewsContext';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -26,18 +27,20 @@ export default function App() {
   return (
     <LocationProvider>
       <FavoritesProvider>
-        <NavigationContainer>
-          <StatusBar style="dark" />
-          <Stack.Navigator
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="Main" component={MainScreen} />
-            <Stack.Screen name="Destination" component={DestinationScreen} />
-            <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <ReviewsProvider>
+          <NavigationContainer>
+            <StatusBar style="dark" />
+            <Stack.Navigator
+              screenOptions={{
+                headerShown: false,
+              }}
+            >
+              <Stack.Screen name="Main" component={MainScreen} />
+              <Stack.Screen name="Destination" component={DestinationScreen} />
+              <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </ReviewsProvider>
       </FavoritesProvider>
     </LocationProvider>
   );

@@ -11,59 +11,29 @@ import { COLORS, SPACING } from '../../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-
-interface Review {
-  id: string;
-  user: string;
-  rating: number;
-  comment: string;
-  date: string;
-}
+import { useReviews } from '../../context/ReviewsContext';
 
 interface ReviewSectionProps {
-  rating: number;
-  totalReviews: number;
-  reviews: Review[];
+  locationId: string;
   locationName: string;
 }
-
-const MOCK_REVIEWS: Review[] = [
-  {
-    id: '1',
-    user: 'Sarah M.',
-    rating: 5,
-    comment: 'Amazing place! The views are breathtaking and the local food is delicious.',
-    date: '2 days ago'
-  },
-  {
-    id: '2',
-    user: 'John D.',
-    rating: 4,
-    comment: 'Great experience overall. Would definitely recommend visiting during spring.',
-    date: '1 week ago'
-  },
-  {
-    id: '3',
-    user: 'Emma W.',
-    rating: 5,
-    comment: 'Perfect destination for both adventure and relaxation. Loved every moment!',
-    date: '2 weeks ago'
-  },
-];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ReviewSection: React.FC<ReviewSectionProps> = ({
-  rating = 4.7,
-  totalReviews = 128,
-  reviews = MOCK_REVIEWS,
+  locationId,
   locationName,
 }) => {
   const navigation = useNavigation<NavigationProp>();
+  const { getLocationReviews, getLocationRating } = useReviews();
+  
+  const reviews = getLocationReviews(locationId);
+  const { rating, total: totalReviews } = getLocationRating(locationId);
 
   const handleSeeAll = () => {
     navigation.navigate('AllReviews', {
       locationName,
+      locationId,
       rating,
       totalReviews,
     });
