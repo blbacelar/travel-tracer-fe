@@ -14,6 +14,8 @@ export interface Location {
   distance: number;
   straightLineDistance: number;
   weather: Weather;
+  imageUrl: string;
+  description?: string;
 }
 
 export type FeatherIconName = keyof typeof Feather.glyphMap;

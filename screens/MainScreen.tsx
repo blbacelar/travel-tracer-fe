@@ -5,6 +5,8 @@ import {
   FlatList,
   Text,
   ActivityIndicator,
+  SafeAreaView,
+  Platform,
 } from "react-native";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
@@ -59,41 +61,47 @@ export default function MainScreen() {
     <DestinationCard location={item} />
   );
 
-  console.log("🚀 Locations:", locations);
-
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={locations}
-        renderItem={renderItem}
-        keyExtractor={(item) =>
-          `${item.city}-${item.latitude}-${item.longitude}`
-        }
-        ListHeaderComponent={ListHeaderComponent}
-        ListEmptyComponent={ListEmptyComponent}
-        numColumns={2}
-        columnWrapperStyle={locations.length > 0 ? styles.row : undefined}
-        contentContainerStyle={[
-          styles.list,
-          locations.length === 0 && styles.emptyList,
-        ]}
-      />
-      <BottomNav />
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <FlatList
+          data={locations}
+          renderItem={renderItem}
+          keyExtractor={(item) =>
+            `${item.city}-${item.latitude}-${item.longitude}`
+          }
+          ListHeaderComponent={ListHeaderComponent}
+          ListEmptyComponent={ListEmptyComponent}
+          numColumns={2}
+          columnWrapperStyle={locations.length > 0 ? styles.row : undefined}
+          contentContainerStyle={[
+            styles.list,
+            locations.length === 0 && styles.emptyList,
+          ]}
+        />
+        <BottomNav />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    paddingTop: Platform.OS === "android" ? SPACING.xl : 0,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.background,
   },
   list: {
-    padding: SPACING.xs,
+    padding: SPACING.md,
     flexGrow: 1,
   },
   row: {
     justifyContent: "space-between",
+    // paddingHorizontal: SPACING,
   },
   centerContainer: {
     flex: 1,

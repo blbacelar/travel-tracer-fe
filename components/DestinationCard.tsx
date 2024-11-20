@@ -7,20 +7,26 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, SPACING } from "../constants/theme";
 import { Location } from "../types/api";
 import { getCityImage } from "../services/unsplash";
+import { RootStackParamList } from "../App";
 
 interface DestinationCardProps {
   location: Location;
   onPress?: () => void;
 }
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Main">;
+
 const DestinationCard: React.FC<DestinationCardProps> = ({
   location,
   onPress,
 }) => {
+  const navigation = useNavigation<NavigationProp>();
   const { city, state, country, distance, weather } = location;
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -45,13 +51,22 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
     setIsFavorite(!isFavorite);
   };
 
+  const handlePress = () => {
+    navigation.navigate("Destination", {
+      location: {
+        ...location,
+        imageUrl: imageUrl,
+      },
+    });
+  };
+
   console.log("🚀 Weather:", weather);
   if (!weather) {
     return null;
   }
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity style={styles.card} onPress={handlePress} >
       {isLoading ? (
         <View style={styles.imagePlaceholder}>
           <ActivityIndicator size="small" color={COLORS.primary} />
