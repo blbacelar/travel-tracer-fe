@@ -24,7 +24,7 @@ export default function MainScreen() {
 
   const ListHeaderComponent = () => (
     <>
-      <Header username="John" />
+      <Header />
       <SearchBar />
       <PromoBanner />
 

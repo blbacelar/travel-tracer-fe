@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 import { SearchFilters, Location as LocationType } from '../types/api';
 import { fetchLocations } from '../services/api';

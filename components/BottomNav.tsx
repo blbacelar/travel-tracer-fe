@@ -1,7 +1,12 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../constants/theme';
+import { COLORS, SPACING, FONT_SIZES } from '../constants/theme';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 type NavItemProps = {
   icon: keyof typeof Feather.glyphMap;
@@ -29,15 +34,33 @@ const NavItem = ({ icon, label, isActive, onPress }: NavItemProps) => (
   </TouchableOpacity>
 );
 
+type NavItem = {
+  id: string;
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  screenName?: keyof RootStackParamList;
+};
+
 const BottomNav = () => {
   const [activeTab, setActiveTab] = React.useState('home');
+  const navigation = useNavigation<NavigationProp>();
 
-  const navItems = [
-    { id: 'home', icon: 'home', label: 'Home' },
+  const navItems: NavItem[] = [
+    { id: 'home', icon: 'home', label: 'Home', screenName: 'Main' },
     { id: 'explore', icon: 'compass', label: 'Explore' },
     { id: 'notifications', icon: 'bell', label: 'Notifications' },
-    { id: 'profile', icon: 'user', label: 'Profile' },
+    { id: 'profile', icon: 'user', label: 'Profile', screenName: 'Profile' },
   ];
+
+  const handlePress = (item: NavItem) => {
+    setActiveTab(item.id);
+    if (item.screenName) {
+      navigation.navigate({
+        name: item.screenName,
+        params: undefined,
+      } as never);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -47,7 +70,7 @@ const BottomNav = () => {
           icon={item.icon}
           label={item.label}
           isActive={activeTab === item.id}
-          onPress={() => setActiveTab(item.id)}
+          onPress={() => handlePress(item)}
         />
       ))}
     </View>
@@ -63,7 +86,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    paddingBottom: SPACING.md, // Extra padding for bottom safe area
+    paddingBottom: SPACING.md,
   },
   navItem: {
     alignItems: 'center',
@@ -72,7 +95,7 @@ const styles = StyleSheet.create({
     minWidth: 64,
   },
   navLabel: {
-    fontSize: 12,
+    fontSize: FONT_SIZES.sm,
     marginTop: SPACING.xs,
     color: COLORS.textLight,
   },

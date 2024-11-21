@@ -11,6 +11,13 @@ import { FavoritesProvider } from './context/FavoritesContext';
 import AllReviewsScreen from './screens/AllReviewsScreen';
 import { ReviewsProvider } from './context/ReviewsContext';
 import ChatScreen from './screens/ChatScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import OnboardingScreen from './screens/auth/OnboardingScreen';
+import LoginScreen from './screens/auth/LoginScreen';
+import RegisterScreen from './screens/auth/RegisterScreen';
+import { ThemeProvider } from './context/ThemeContext';
+import { ClerkProvider } from "@clerk/clerk-expo";
+import { tokenCache } from './clerk';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -22,31 +29,47 @@ export type RootStackParamList = {
     totalReviews: number;
   };
   Chat: undefined;
+  Profile: undefined;
+  Onboarding: undefined;
+  Login: undefined;
+  Register: undefined;
+  EditProfile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <LocationProvider>
-      <FavoritesProvider>
-        <ReviewsProvider>
-          <NavigationContainer>
-            <StatusBar style="dark" />
-            <Stack.Navigator
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="Main" component={MainScreen} />
-              <Stack.Screen name="Destination" component={DestinationScreen} />
-              <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
-              <Stack.Screen name="Chat" component={ChatScreen} />
-            </Stack.Navigator>
-          </NavigationContainer>
-        </ReviewsProvider>
-      </FavoritesProvider>
-    </LocationProvider>
+    <ClerkProvider 
+      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      tokenCache={tokenCache}
+    >
+      <ThemeProvider>
+        <LocationProvider>
+          <FavoritesProvider>
+            <ReviewsProvider>
+              <NavigationContainer>
+                <StatusBar style="dark" />
+                <Stack.Navigator
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                >
+                  <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                  <Stack.Screen name="Login" component={LoginScreen} />
+                  <Stack.Screen name="Register" component={RegisterScreen} />
+                  <Stack.Screen name="Main" component={MainScreen} />
+                  <Stack.Screen name="Destination" component={DestinationScreen} />
+                  <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+                  <Stack.Screen name="Chat" component={ChatScreen} />
+                  <Stack.Screen name="Profile" component={ProfileScreen} />
+                </Stack.Navigator>
+              </NavigationContainer>
+            </ReviewsProvider>
+          </FavoritesProvider>
+        </LocationProvider>
+      </ThemeProvider>
+    </ClerkProvider>
   );
 }
 

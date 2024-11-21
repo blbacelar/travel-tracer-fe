@@ -6,27 +6,32 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "travel-tracer",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.traveltracer.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.traveltracer.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "assetBundlePatterns": [
-      "**/*",
-      "assets/images/*"
+      "**/*"
     ],
     "plugins": [
       [
@@ -34,7 +39,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }
