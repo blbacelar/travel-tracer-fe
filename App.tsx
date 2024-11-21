@@ -10,6 +10,7 @@ import './config/env';
 import { FavoritesProvider } from './context/FavoritesContext';
 import AllReviewsScreen from './screens/AllReviewsScreen';
 import { ReviewsProvider } from './context/ReviewsContext';
+import ChatScreen from './screens/ChatScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -20,6 +21,7 @@ export type RootStackParamList = {
     rating: number;
     totalReviews: number;
   };
+  Chat: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -39,6 +41,7 @@ export default function App() {
               <Stack.Screen name="Main" component={MainScreen} />
               <Stack.Screen name="Destination" component={DestinationScreen} />
               <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+              <Stack.Screen name="Chat" component={ChatScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </ReviewsProvider>

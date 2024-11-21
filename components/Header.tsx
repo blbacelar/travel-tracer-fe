@@ -1,82 +1,69 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../constants/theme';
+import React from "react";
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { COLORS, SPACING } from "../constants/theme";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../App";
 
-type HeaderProps = {
+interface HeaderProps {
   username: string;
-  onMenuPress?: () => void;
-  onNotificationPress?: () => void;
-  hasNotifications?: boolean;
-};
+}
 
-const Header = ({ 
-  username, 
-  onMenuPress = () => {}, 
-  onNotificationPress = () => {},
-  hasNotifications = true 
-}: HeaderProps) => {
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const Header: React.FC<HeaderProps> = ({ username }) => {
+  const navigation = useNavigation<NavigationProp>();
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.iconButton} 
-        onPress={onMenuPress}
-      >
-        <Feather name="menu" size={24} color={COLORS.textDark} />
-      </TouchableOpacity>
-
-      <View style={styles.greetingContainer}>
-        <Text style={styles.greeting}>Hi,</Text>
+      <View>
+        <Text style={styles.greeting}>Hello,</Text>
         <Text style={styles.username}>{username}</Text>
       </View>
-
-      <TouchableOpacity 
-        style={styles.iconButton} 
-        onPress={onNotificationPress}
-      >
-        <Feather name="bell" size={24} color={COLORS.textDark} />
-        {hasNotifications && <View style={styles.notificationDot} />}
-      </TouchableOpacity>
+      <View style={styles.actions}>
+        <TouchableOpacity 
+          style={styles.iconButton}
+          onPress={() => navigation.navigate('Chat')}
+        >
+          <Feather name="message-circle" size={24} color={COLORS.textDark} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton}>
+          <Feather name="bell" size={24} color={COLORS.textDark} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
   },
-  iconButton: {
-    padding: SPACING.xs,
-    position: 'relative',
-  },
-  greetingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
   greeting: {
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.textLight,
   },
   username: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: "bold",
     color: COLORS.textDark,
   },
-  notificationDot: {
-    position: 'absolute',
-    top: SPACING.xs,
-    right: SPACING.xs,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.primary,
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+  },
+  iconButton: {
+    padding: SPACING.xs,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: COLORS.border,
   },
 });
 

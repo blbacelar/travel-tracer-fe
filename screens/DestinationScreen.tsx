@@ -52,10 +52,12 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Animated Header */}
       <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
-        <Text style={styles.headerTitle}>{location.city}</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>{location.city}</Text>
+        </View>
       </Animated.View>
 
       {/* Back Button */}
@@ -139,7 +141,7 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
@@ -148,13 +150,16 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 60,
     backgroundColor: COLORS.background,
     zIndex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingTop: Platform.OS === 'ios' ? 44 : 0,
+  },
+  headerContent: {
+    height: 60,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 18,

@@ -24,6 +24,8 @@ const getWeatherBackground = (condition: string): any => {
       return require("../../assets/images/weather/snowy.jpg");
     case "light snow":
       return require("../../assets/images/weather/light-snow.jpg");
+    case "patchy light snow":
+      return require("../../assets/images/weather/light-snow.jpg");
     default:
       return require("../../assets/images/weather/default.jpg");
   }
