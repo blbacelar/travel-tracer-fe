@@ -1,29 +1,16 @@
-import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import { COLORS, SPACING, FONT_SIZES } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
-import AuthButton from './AuthButton';
-import { useOAuth } from "@clerk/clerk-expo";
-import * as WebBrowser from "expo-web-browser";
-import { useCallback } from "react";
-
-WebBrowser.maybeCompleteAuthSession();
+import React from "react";
+import { StyleSheet, View, Text, Platform } from "react-native";
+import { COLORS, SPACING, FONT_SIZES } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
+import AuthButton from "./AuthButton";
+import { useOAuthFlow } from "../../hooks/useOAuthFlow";
+import { useWarmUpBrowser } from "../../hooks/useWarmUpBrowser";
+import { Strategy } from "../../types/auth";
 
 const SocialAuthButtons = () => {
+  useWarmUpBrowser();
   const { colors } = useTheme();
-  const { startOAuthFlow: startGoogleOAuthFlow } = useOAuth({ strategy: "oauth_google" });
-
-  const onGooglePress = useCallback(async () => {
-    try {
-      const { createdSessionId, setActive } = await startGoogleOAuthFlow();
-      
-      if (createdSessionId) {
-        setActive({ session: createdSessionId });
-      }
-    } catch (err) {
-      console.error("OAuth error:", err);
-    }
-  }, [startGoogleOAuthFlow]);
+  const { onSelectAuth } = useOAuthFlow();
 
   return (
     <View style={styles.container}>
@@ -38,14 +25,16 @@ const SocialAuthButtons = () => {
       <View style={styles.socialButtons}>
         <AuthButton
           title="Google"
-          onPress={onGooglePress}
+          onPress={() => onSelectAuth(Strategy.Google)}
           variant="secondary"
         />
-        <AuthButton
-          title="Apple"
-          onPress={() => {/* Handle Apple auth */}}
-          variant="secondary"
-        />
+        {Platform.OS === 'ios' && (
+          <AuthButton
+            title="Apple"
+            onPress={() => onSelectAuth(Strategy.Apple)}
+            variant="secondary"
+          />
+        )}
       </View>
     </View>
   );
@@ -56,8 +45,8 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
   },
   divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: SPACING.lg,
   },
   line: {
@@ -73,4 +62,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SocialAuthButtons; 
+export default SocialAuthButtons;

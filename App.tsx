@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, SafeAreaView } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MainScreen from './screens/MainScreen';
@@ -18,6 +18,9 @@ import RegisterScreen from './screens/auth/RegisterScreen';
 import { ThemeProvider } from './context/ThemeContext';
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from './clerk';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export type RootStackParamList = {
   Main: undefined;
@@ -43,6 +46,9 @@ export default function App() {
     <ClerkProvider 
       publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
       tokenCache={tokenCache}
+      appearance={{
+        baseTheme: undefined
+      }}
     >
       <ThemeProvider>
         <LocationProvider>

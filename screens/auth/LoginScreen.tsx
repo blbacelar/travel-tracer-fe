@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -9,15 +9,20 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from "../../constants/theme";
+import {
+  COLORS,
+  SPACING,
+  FONT_SIZES,
+  BORDER_RADIUS,
+} from "../../constants/theme";
 import { useTheme } from "../../context/ThemeContext";
-import { useSignIn, useOAuth } from "@clerk/clerk-expo";
+import { useSignIn } from "@clerk/clerk-expo";
 import AuthInput from "../../components/auth/AuthInput";
 import AuthButton from "../../components/auth/AuthButton";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 import { Feather } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
+import SocialAuthButtons from "../../components/auth/SocialAuthButtons";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -31,7 +36,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
   const handleSignIn = async () => {
     if (!isLoaded || !signIn) {
@@ -51,21 +55,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       setError(error.message || "An error occurred during sign in");
     }
   };
-
-  const handleGoogleSignIn = useCallback(async () => {
-    try {
-      const { createdSessionId, setActive } = await startOAuthFlow();
- 
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        navigation.navigate("Main");
-      }
-    } catch (err) {
-      console.error("OAuth error:", err);
-      const error = err as Error;
-      setError(error.message || "An error occurred during Google sign in");
-    }
-  }, [startOAuthFlow]);
 
   return (
     <SafeAreaView
@@ -123,23 +112,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               loading={!isLoaded}
             />
 
-            <View style={styles.divider}>
-              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-              <Text style={[styles.dividerText, { color: colors.textLight }]}>
-                or continue with
-              </Text>
-              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.googleButton, { borderColor: colors.border }]}
-              onPress={handleGoogleSignIn}
-            >
-              <Feather name="log-in" size={20} color={colors.textDark} />
-              <Text style={[styles.googleButtonText, { color: colors.textDark }]}>
-                Continue with Google
-              </Text>
-            </TouchableOpacity>
+            <SocialAuthButtons />
           </View>
 
           <View style={styles.footer}>
@@ -176,7 +149,7 @@ const styles = StyleSheet.create({
   backButton: {
     padding: SPACING.xs,
     marginBottom: SPACING.sm,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   title: {
     fontSize: FONT_SIZES.xxl,
@@ -205,33 +178,7 @@ const styles = StyleSheet.create({
   footerLink: {
     fontSize: FONT_SIZES.md,
     fontWeight: "600",
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: SPACING.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: SPACING.md,
-    fontSize: FONT_SIZES.sm,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    gap: SPACING.sm,
-  },
-  googleButtonText: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '500',
-  },
+  }
 });
 
 export default LoginScreen;
