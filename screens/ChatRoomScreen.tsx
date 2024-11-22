@@ -17,6 +17,8 @@ import { RootStackParamList } from "../App";
 import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@clerk/clerk-expo";
 import { debounce } from "lodash";
+import { useTheme } from "../context/ThemeContext";
+import { COLORS } from "../constants/theme";
 
 type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, "ChatRoom">;
 
@@ -28,6 +30,7 @@ const ChatRoomScreen = () => {
   const [messageText, setMessageText] = useState("");
   const { user } = useUser();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const { colors } = useTheme();
 
   const debouncedSetTyping = useMemo(
     () => debounce((typing: boolean) => setTyping(typing), 500),
@@ -114,15 +117,17 @@ const ChatRoomScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={colors.textDark} />
         </TouchableOpacity>
-        <Text style={styles.userName}>{userName}</Text>
+        <Text style={[styles.userName, { color: colors.textDark }]}>
+          {userName}
+        </Text>
       </View>
 
       <FlatList
@@ -152,7 +157,7 @@ const ChatRoomScreen = () => {
               multiline
             />
             <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-              <Ionicons name="send" size={24} color="#007AFF" />
+              <Ionicons name="send" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -167,7 +172,7 @@ const ChatRoomScreen = () => {
             multiline
           />
           <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-            <Ionicons name="send" size={24} color="#007AFF" />
+            <Ionicons name="send" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
       )}
@@ -207,20 +212,20 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#007AFF",
+    backgroundColor: COLORS.primary,
   },
   otherMessage: {
     alignSelf: "flex-start",
-    backgroundColor: "#E8E8E8",
+    backgroundColor: COLORS.border,
   },
   messageText: {
     fontSize: 16,
   },
   myMessageText: {
-    color: "#fff",
+    color: COLORS.background,
   },
   otherMessageText: {
-    color: "#000",
+    color: COLORS.textDark,
   },
   timestamp: {
     fontSize: 12,

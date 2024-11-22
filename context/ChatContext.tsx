@@ -10,7 +10,8 @@ import {
   getDocs,
   doc,
   updateDoc,
-  setDoc
+  setDoc,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from "../config/firebase";
 import { useUser } from "@clerk/clerk-expo";
@@ -41,6 +42,7 @@ interface ChatContextType {
   joinRoom: (roomId: string) => Promise<void>;
   getOrCreateChatRoom: (otherUserId: string) => Promise<ChatRoom>;
   setTyping: (isTyping: boolean) => void;
+  unreadCount: number;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -52,6 +54,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [typingUsers, setTypingUsers] = useState<{ [key: string]: { isTyping: boolean, userName: string } }>({});
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useUser();
 
   useEffect(() => {
@@ -119,6 +122,41 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => unsubscribe();
   }, [currentRoom]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Get all rooms where the user is a participant
+    const roomsQuery = query(
+      collection(db, 'chatRooms'),
+      where('participants', 'array-contains', user.id)
+    );
+
+    const unsubscribe = onSnapshot(roomsQuery, async (roomsSnapshot) => {
+      const roomIds = roomsSnapshot.docs.map(doc => doc.id);
+      
+      if (roomIds.length === 0) return;
+
+      // Get unread messages from these rooms
+      const messagesQuery = query(
+        collection(db, 'messages'),
+        where('roomId', 'in', roomIds),
+        where('senderId', '!=', user.id), // Messages not sent by current user
+        where('readStatus', '==', false)  // Unread messages
+      );
+
+      const messagesUnsubscribe = onSnapshot(messagesQuery, (messagesSnapshot) => {
+        console.log('Unread messages count:', messagesSnapshot.docs.length); // Debug log
+        setUnreadCount(messagesSnapshot.docs.length);
+      });
+
+      return () => {
+        messagesUnsubscribe();
+      };
+    });
+
+    return () => unsubscribe();
+  }, [user?.id]);
+
   const getOrCreateChatRoom = async (otherUserId: string): Promise<ChatRoom> => {
     if (!user?.id) throw new Error("No user available");
 
@@ -158,19 +196,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     
     if (!user?.id) return;
 
-    const q = query(
-      collection(db, 'messages'),
-      where('roomId', '==', roomId),
-      where('senderId', '!=', user.id),
-      where('readStatus', '==', false)
-    );
+    try {
+      // Mark all messages in this room as read when joining
+      const q = query(
+        collection(db, 'messages'),
+        where('roomId', '==', roomId),
+        where('senderId', '!=', user.id),
+        where('readStatus', '==', false)
+      );
 
-    const querySnapshot = await getDocs(q);
-    querySnapshot.docs.forEach(async (document) => {
-      await updateDoc(doc(db, 'messages', document.id), {
-        readStatus: true
+      const querySnapshot = await getDocs(q);
+      
+      // Use batch write to update all messages at once
+      const batch = writeBatch(db);
+      querySnapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, { readStatus: true });
       });
-    });
+      await batch.commit();
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
   };
 
   const sendMessage = async (content: string, roomId: string) => {
@@ -227,6 +272,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         joinRoom,
         getOrCreateChatRoom,
         setTyping: updateTypingStatus,
+        unreadCount,
       }}
     >
       {children}

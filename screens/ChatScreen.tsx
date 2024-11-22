@@ -6,17 +6,19 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '@clerk/clerk-expo';
 import { useChat } from '../context/ChatContext';
+import { useTheme } from '../context/ThemeContext';
+import { COLORS } from '../constants/theme';
 
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 
 const ChatScreen = () => {
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const { user } = useUser();
-  const { getOrCreateChatRoom } = useChat();
+  const { getOrCreateChatRoom, unreadCount } = useChat();
+  const { colors } = useTheme();
 
   const handleStartChat = async () => {
     try {
-      // For now, navigate to ChatList
       navigation.navigate('ChatList');
     } catch (error) {
       console.error('Error starting chat:', error);
@@ -24,15 +26,15 @@ const ChatScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={colors.textDark} />
         </TouchableOpacity>
-        <Text style={styles.title}>Messages</Text>
+        <Text style={[styles.title, { color: colors.textDark }]}>Messages</Text>
       </View>
 
       <View style={styles.content}>
@@ -40,15 +42,24 @@ const ChatScreen = () => {
           style={styles.chatListButton}
           onPress={handleStartChat}
         >
-          <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
-          <Text style={styles.buttonText}>View All Chats</Text>
+          <View style={styles.buttonContent}>
+            <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
+            <Text style={styles.buttonText}>View All Chats</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
 
         <View style={styles.infoContainer}>
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, { color: colors.textDark }]}>
             Start chatting with other travelers!
           </Text>
-          <Text style={styles.subInfoText}>
+          <Text style={[styles.subInfoText, { color: colors.textLight }]}>
             Connect and share experiences with people from around the world.
           </Text>
         </View>
@@ -114,6 +125,28 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     paddingHorizontal: 20,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    right: -20,
+    top: -10,
+    backgroundColor: COLORS.error,
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

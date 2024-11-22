@@ -1,16 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useChat } from '../context/ChatContext';
-import { useUser, useAuth, useOrganization } from '@clerk/clerk-expo';
-import { formatDistanceToNow } from 'date-fns';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
-import { ChatRoom } from '../context/ChatContext';
-import { ENV } from '../config/env';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { useChat } from "../context/ChatContext";
+import { useUser, useAuth, useOrganization } from "@clerk/clerk-expo";
+import { formatDistanceToNow } from "date-fns";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../App";
+import { ChatRoom } from "../context/ChatContext";
+import { ENV } from "../config/env";
+import { useTheme } from "../context/ThemeContext";
+import { COLORS } from "../constants/theme";
 
-type ChatListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ChatList'>;
+type ChatListScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "ChatList"
+>;
 
 interface RenderItemProps {
   item: ChatRoom;
@@ -29,6 +41,7 @@ const ChatListScreen = () => {
   const { user } = useUser();
   const { organization } = useOrganization();
   const [usersInfo, setUsersInfo] = useState<{ [key: string]: ClerkUser }>({});
+  const { colors } = useTheme();
 
   useEffect(() => {
     const fetchUsersInfo = async () => {
@@ -50,15 +63,18 @@ const ChatListScreen = () => {
             })
             .filter((user): user is NonNullable<typeof user> => user !== null);
 
-          const usersMap = usersList.reduce((acc: { [key: string]: ClerkUser }, user) => {
-            acc[user.id] = user;
-            return acc;
-          }, {});
+          const usersMap = usersList.reduce(
+            (acc: { [key: string]: ClerkUser }, user) => {
+              acc[user.id] = user;
+              return acc;
+            },
+            {}
+          );
 
           setUsersInfo(usersMap);
         }
       } catch (error) {
-        console.error('Error fetching users info:', error);
+        console.error("Error fetching users info:", error);
       }
     };
 
@@ -66,36 +82,43 @@ const ChatListScreen = () => {
   }, [rooms, organization]);
 
   const renderChatRoom = ({ item: room }: RenderItemProps) => {
-    const otherParticipantId = room.participants.find((id: string) => id !== user?.id);
+    const otherParticipantId = room.participants.find(
+      (id: string) => id !== user?.id
+    );
     const otherUser = otherParticipantId ? usersInfo[otherParticipantId] : null;
-    const lastMessage = room.lastMessage?.content || 'No messages yet';
+    const lastMessage = room.lastMessage?.content || "No messages yet";
     const timestamp = room.lastMessage?.timestamp
-      ? formatDistanceToNow(new Date(room.lastMessage.timestamp.seconds * 1000), { addSuffix: true })
-      : '';
+      ? formatDistanceToNow(
+          new Date(room.lastMessage.timestamp.seconds * 1000),
+          { addSuffix: true }
+        )
+      : "";
 
-    const displayName = otherUser 
-      ? `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() 
-      : 'Unknown User';
+    const displayName = otherUser
+      ? `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim()
+      : "Unknown User";
 
     return (
       <TouchableOpacity
         style={styles.chatRoom}
-        onPress={() => navigation.navigate('ChatRoom', {
-          roomId: room.id,
-          userName: displayName,
-          userImage: otherUser?.imageUrl || ''
-        })}
+        onPress={() =>
+          navigation.navigate("ChatRoom", {
+            roomId: room.id,
+            userName: displayName,
+            userImage: otherUser?.imageUrl || "",
+          })
+        }
       >
         {otherUser?.imageUrl ? (
-          <Image 
-            source={{ uri: otherUser.imageUrl }} 
+          <Image
+            source={{ uri: otherUser.imageUrl }}
             style={styles.avatar}
-            defaultSource={require('../assets/default-avatar.png')}
+            defaultSource={require("../assets/default-avatar.png")}
           />
         ) : (
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>
-              {displayName[0]?.toUpperCase() || '?'}
+              {displayName[0]?.toUpperCase() || "?"}
             </Text>
           </View>
         )}
@@ -105,23 +128,21 @@ const ChatListScreen = () => {
             {lastMessage}
           </Text>
         </View>
-        {timestamp && (
-          <Text style={styles.timestamp}>{timestamp}</Text>
-        )}
+        {timestamp && <Text style={styles.timestamp}>{timestamp}</Text>}
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={colors.textDark} />
         </TouchableOpacity>
-        <Text style={styles.title}>Chats</Text>
+        <Text style={[styles.title, { color: colors.textDark }]}>Chats</Text>
       </View>
       <FlatList
         data={rooms}
@@ -136,14 +157,14 @@ const ChatListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
     paddingTop: 60,
   },
   backButton: {
@@ -151,17 +172,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   listContainer: {
     padding: 16,
   },
   chatRoom: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   avatar: {
     width: 50,
@@ -173,31 +194,32 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: COLORS.border,
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   avatarText: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#666',
+    fontWeight: "bold",
+    color: COLORS.primary,
   },
   chatInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+    color: COLORS.primary,
     marginBottom: 4,
   },
   lastMessage: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.textLight,
   },
   timestamp: {
     fontSize: 12,
-    color: '#999',
+    color: COLORS.primary,
     marginLeft: 8,
   },
 });

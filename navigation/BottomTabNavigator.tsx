@@ -5,10 +5,13 @@ import { COLORS } from '../constants/theme';
 import MainScreen from '../screens/MainScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ChatScreen from '../screens/ChatScreen';
+import { useChat } from '../context/ChatContext';
 
 const Tab = createBottomTabNavigator();
 
 const BottomTabNavigator = () => {
+  const { unreadCount } = useChat();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -38,7 +41,16 @@ const BottomTabNavigator = () => {
       })}
     >
       <Tab.Screen name="Home" component={MainScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen 
+        name="Chat" 
+        component={ChatScreen}
+        options={{
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: COLORS.error,
+          },
+        }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
