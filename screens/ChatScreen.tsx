@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, SPACING } from "../constants/theme";
@@ -18,6 +19,10 @@ import ChatBubble from "../components/chat/ChatBubble";
 import DateSeparator from "../components/chat/DateSeparator";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
+import { useChat } from "../context/ChatContext";
+import { useUser } from "@clerk/clerk-expo";
+import ChatListScreen from "./ChatListScreen";
+import ChatRoomScreen from "./ChatRoomScreen";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Chat">;
 
@@ -58,74 +63,39 @@ const MOCK_MESSAGES: Message[] = [
   },
 ];
 
-const ChatScreen: React.FC<Props> = ({ navigation, route }) => {
-  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
-  const [isTyping, setIsTyping] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
+const ChatScreen: React.FC<Props> = ({ navigation }) => {
+  const { user: currentUser } = useUser();
+  const { getOrCreateChatRoom } = useChat();
 
-  const handleSend = (
-    text: string,
-    attachments?: { type: "image" | "file"; url: string }[]
-  ) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text,
-      sender: "user",
-      timestamp: new Date(),
-      status: "sent",
-      attachments,
-    };
+  const handleUserSelect = async (userId: string, userName: string, userImage: string) => {
+    try {
+      if (!currentUser?.id) {
+        throw new Error("No current user found");
+      }
 
-    setMessages((prev) => [newMessage, ...prev]);
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      console.log("Getting or creating chat room with:", userId);
+
+      const room = await getOrCreateChatRoom(userId);
+
+      console.log("Room:", room);
+
+      navigation.navigate("ChatRoom", {
+        roomId: room.id,
+        userName: userName,
+        userImage: userImage,
+      });
+    } catch (error) {
+      console.error("Error with chat room:", error);
+      Alert.alert(
+        "Error",
+        error instanceof Error
+          ? error.message
+          : "Failed to start chat. Please try again."
+      );
+    }
   };
 
-  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
-    const showDateSeparator =
-      index === messages.length - 1 ||
-      !isSameDay(item.timestamp, messages[index + 1].timestamp);
-
-    return (
-      <View>
-        {showDateSeparator && <DateSeparator date={item.timestamp} />}
-        <ChatBubble message={item} />
-      </View>
-    );
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <ChatHeader
-        name="Sarah Mitchell"
-        image="https://example.com/avatar.jpg"
-        isOnline={true}
-        onBack={() => navigation.goBack()}
-      />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.content}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          inverted
-          contentContainerStyle={styles.messageList}
-        />
-
-        {isTyping && (
-          <View style={styles.typingIndicator}>
-            <Text style={styles.typingText}>Sarah is typing...</Text>
-          </View>
-        )}
-
-        <MessageComposer onSend={handleSend} />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+  return <ChatListScreen onUserSelect={handleUserSelect} />;
 };
 
 const styles = StyleSheet.create({

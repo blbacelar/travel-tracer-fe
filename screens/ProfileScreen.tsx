@@ -8,14 +8,16 @@ import {
   SafeAreaView,
   ScrollView,
   Platform,
+  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
-import { useUser } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import ProfileMenuItem from "../components/profile/ProfileMenuItem";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
+import { useNavigation } from '@react-navigation/native';
 
 type ProfileScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
@@ -27,6 +29,8 @@ interface ProfileScreenProps {
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { user } = useUser();
+  const { signOut } = useAuth();
+  const navigationProp = useNavigation<ProfileScreenNavigationProp>();
 
   const menuItems = [
     {
@@ -58,6 +62,21 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const location = user?.publicMetadata?.location as string | undefined;
   const userFullName = user?.fullName || "User Name";
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigationProp.reset({
+        index: 0,
+        routes: [{ name: 'Onboarding' }],
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      Alert.alert("Error", "Failed to sign out. Please try again.", [
+        { text: "OK" },
+      ]);
+    }
+  };
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -71,7 +90,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           >
             <Feather name="arrow-left" size={24} color={colors.textDark} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textDark }]}>Profile</Text>
+          <Text style={[styles.headerTitle, { color: colors.textDark }]}>
+            Profile
+          </Text>
           <View style={styles.backButton} />
         </View>
 
@@ -139,9 +160,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               styles.signOutButton,
               { backgroundColor: colors.error + "10" },
             ]}
-            onPress={() => {
-              /* Handle sign out */
-            }}
+            onPress={handleSignOut}
           >
             <Feather name="log-out" size={20} color={colors.error} />
             <Text style={[styles.signOutText, { color: colors.error }]}>
@@ -164,9 +183,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
@@ -174,13 +193,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: FONT_SIZES.lg,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   backButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: BORDER_RADIUS.full,
   },
   contentContainer: {

@@ -11,17 +11,24 @@ import { Feather } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../../constants/theme';
 
 interface MessageComposerProps {
-  onSend: (text: string, attachments?: { type: 'image' | 'file'; url: string }[]) => void;
+  onSend: (text: string) => void;
+  onTypingChange?: (isTyping: boolean) => void;
 }
 
-const MessageComposer: React.FC<MessageComposerProps> = ({ onSend }) => {
+const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, onTypingChange }) => {
   const [message, setMessage] = useState('');
 
   const handleSend = () => {
     if (message.trim()) {
       onSend(message.trim());
       setMessage('');
+      onTypingChange?.(false);
     }
+  };
+
+  const handleChangeText = (text: string) => {
+    setMessage(text);
+    onTypingChange?.(text.length > 0);
   };
 
   return (
@@ -40,7 +47,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({ onSend }) => {
             placeholder="Type a message..."
             placeholderTextColor={COLORS.textLight}
             value={message}
-            onChangeText={setMessage}
+            onChangeText={handleChangeText}
             multiline
             maxLength={1000}
           />
@@ -67,32 +74,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs,
     backgroundColor: COLORS.background,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
   button: {
     padding: SPACING.sm,
-    borderRadius: 24,
-    backgroundColor: 'transparent',
-  },
-  sendButton: {
-    transform: [{ rotate: '45deg' }],
   },
   inputContainer: {
     flex: 1,
     marginHorizontal: SPACING.xs,
-    backgroundColor: COLORS.border + '20',
-    borderRadius: 24,
+    backgroundColor: COLORS.border + '30',
+    borderRadius: 20,
     paddingHorizontal: SPACING.sm,
     maxHeight: 100,
   },
   input: {
     fontSize: 16,
     color: COLORS.textDark,
-    paddingVertical: Platform.OS === 'ios' ? SPACING.sm : SPACING.xs,
-    maxHeight: 100,
+    paddingVertical: SPACING.sm,
+  },
+  sendButton: {
+    backgroundColor: 'transparent',
   },
 });
 

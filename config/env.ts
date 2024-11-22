@@ -20,7 +20,7 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
 
 // Export validated environment variables
 export const ENV = {
-  API_URL: requiredEnvVars.EXPO_PUBLIC_API_URL,
+  API_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
   UNSPLASH_ACCESS_KEY: requiredEnvVars.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY,
   UNSPLASH_BASE_URL: requiredEnvVars.EXPO_PUBLIC_UNSPLASH_BASE_URL,
 } as const;
