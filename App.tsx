@@ -21,6 +21,7 @@ import { ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from './clerk';
 import * as WebBrowser from 'expo-web-browser';
 import { ChatProvider } from './context/ChatContext';
+import ChatListScreen from './screens/ChatListScreen';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -34,6 +35,7 @@ export type RootStackParamList = {
     totalReviews: number;
   };
   Chat: undefined;
+  ChatList: undefined;
   ChatRoom: { 
     roomId: string; 
     userName: string;
@@ -78,6 +80,7 @@ export default function App() {
                     <Stack.Screen name="Chat" component={ChatScreen} />
                     <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
                     <Stack.Screen name="Profile" component={ProfileScreen} />
+                    <Stack.Screen name="ChatList" component={ChatListScreen} />
                   </Stack.Navigator>
                 </NavigationContainer>
               </ChatProvider>

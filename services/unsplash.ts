@@ -1,4 +1,4 @@
-import { ENV } from '../config/env';
+import { ENV } from "../config/env";
 
 export const getCityImage = async (
   city: string,
@@ -10,6 +10,7 @@ export const getCityImage = async (
     const url = `${ENV.UNSPLASH_BASE_URL}/search/photos?query=${encodedQuery}&client_id=${ENV.UNSPLASH_ACCESS_KEY}&per_page=1&orientation=landscape`;
 
     console.log("Fetching image for:", searchQuery);
+    console.log("URL:", url);
     const response = await fetch(url);
 
     if (!response.ok) {

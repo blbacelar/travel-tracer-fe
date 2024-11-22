@@ -1,16 +1,25 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import io, { Socket } from "socket.io-client";
-import { ENV } from "../config/env";
-import { useUser, useAuth } from "@clerk/clerk-expo";
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  addDoc, 
+  onSnapshot,
+  serverTimestamp,
+  getDocs,
+  doc,
+  updateDoc,
+  setDoc
+} from 'firebase/firestore';
+import { db } from "../config/firebase";
+import { useUser } from "@clerk/clerk-expo";
 
 export interface ChatMessage {
   id: string;
   senderId: string;
   content: string;
-  timestamp: {
-    seconds: number;
-    nanoseconds: number;
-  };
+  timestamp: any;
   roomId: string;
   readStatus: boolean;
 }
@@ -19,20 +28,16 @@ export interface ChatRoom {
   id: string;
   type: "private" | "group";
   participants: string[];
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  };
+  createdAt: any;
   lastMessage?: ChatMessage;
 }
 
 interface ChatContextType {
-  socket: Socket | null;
   currentRoom: string | null;
   messages: ChatMessage[];
   rooms: ChatRoom[];
   isTyping: { [key: string]: boolean };
-  sendMessage: (content: string) => void;
+  sendMessage: (content: string, roomId: string) => Promise<void>;
   joinRoom: (roomId: string) => Promise<void>;
   getOrCreateChatRoom: (otherUserId: string) => Promise<ChatRoom>;
   setTyping: (isTyping: boolean) => void;
@@ -40,230 +45,148 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-// Add these interfaces for socket errors
-interface SocketError extends Error {
-  description?: {
-    isTrusted: boolean;
-    message: string;
-  };
-  headers?: {
-    Authorization: string;
-  };
-}
-
-interface SocketTransport {
-  name: string;
-}
-
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [typingUsers, setTypingUsers] = useState<{ [key: string]: boolean }>(
-    {}
-  );
+  const [typingUsers, setTypingUsers] = useState<{ [key: string]: boolean }>({});
   const { user } = useUser();
-  const { getToken } = useAuth();
 
   useEffect(() => {
-    const initializeSocket = async () => {
-      if (!user) return;
+    if (!user?.id) return;
 
-      try {
-        const token = await getToken();
-        if (!token) {
-          console.error("No authentication token available");
-          return;
-        }
+    const q = query(
+      collection(db, 'chatRooms'),
+      where('participants', 'array-contains', user.id)
+    );
 
-        const baseUrl = ENV.API_URL.replace(/\/api\/?$/, "");
-        // console.log("Initializing socket with config:", {
-        //   url: baseUrl,
-        //   userId: user.id,
-        // });
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const updatedRooms = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ChatRoom[];
+      setRooms(updatedRooms);
+    });
 
-        const newSocket = io(baseUrl, {
-          auth: {
-            token: token,
-          },
-          query: {
-            userId: user.id,
-          },
-          transports: ["websocket"],
-          path: "/socket.io",
-          reconnection: true,
-          reconnectionAttempts: 5,
-          timeout: 10000,
-        });
+    return () => unsubscribe();
+  }, [user?.id]);
 
-        newSocket.on("connect", () => {
-          console.log("Socket connected:", {
-            id: newSocket.id,
-            connected: newSocket.connected,
-            transport: newSocket.io.engine?.transport.name,
-          });
-        });
+  useEffect(() => {
+    if (!currentRoom) return;
 
-        newSocket.on("disconnect", (reason) => {
-          console.log("Socket disconnected:", { reason });
-        });
+    const q = query(
+      collection(db, 'messages'),
+      where('roomId', '==', currentRoom),
+      orderBy('timestamp', 'desc')
+    );
 
-        newSocket.on("connect_error", (error: SocketError) => {
-          // console.error("Socket Connection Error Details:", {
-          //   description: error.description,
-          //   headers: {
-          //     Authorization: token,
-          //   },
-          //   message: error.message,
-          //   url: baseUrl,
-          //   userId: user.id,
-          // });
-        });
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const updatedMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ChatMessage[];
+      setMessages(updatedMessages);
+    });
 
-        newSocket.on("error", (error) => {
-          // console.error('Socket Error:', error);
-        });
+    return () => unsubscribe();
+  }, [currentRoom]);
 
-        newSocket.on("newMessage", (message: ChatMessage) => {
-          console.log("New message received:", message);
-          setMessages((prev) => [...prev, message]);
-        });
+  const getOrCreateChatRoom = async (otherUserId: string): Promise<ChatRoom> => {
+    if (!user?.id) throw new Error("No user available");
 
-        newSocket.on("messageHistory", (messages: ChatMessage[]) => {
-          console.log("Message history received:", messages.length);
-          setMessages(messages);
-        });
+    const q = query(
+      collection(db, 'chatRooms'),
+      where('type', '==', 'private'),
+      where('participants', 'array-contains', user.id)
+    );
 
-        newSocket.on("userTyping", (userId: string) => {
-          setTypingUsers((prev) => ({ ...prev, [userId]: true }));
-        });
+    const querySnapshot = await getDocs(q);
+    const existingRoom = querySnapshot.docs.find(doc => {
+      const room = doc.data();
+      return room.participants.includes(otherUserId) && 
+             room.participants.length === 2;
+    });
 
-        newSocket.on("userStoppedTyping", (userId: string) => {
-          setTypingUsers((prev) => ({ ...prev, [userId]: false }));
-        });
-
-        setSocket(newSocket);
-
-        return () => {
-          newSocket.disconnect();
-          newSocket.removeAllListeners();
-        };
-      } catch (error) {
-        console.error("Error initializing socket:", error);
-      }
-    };
-
-    initializeSocket();
-  }, [user]);
-
-  const getOrCreateChatRoom = async (
-    otherUserId: string
-  ): Promise<ChatRoom> => {
-    try {
-      const token = await getToken();
-      console.log("TOKEN:", token);
-      if (!token || !user?.id) {
-        throw new Error("No authentication token available");
-      }
-
-      const response = await fetch(`${ENV.API_URL}/chat/rooms`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch rooms");
-      }
-
-      const rooms: ChatRoom[] = await response.json();
-
-      const existingRoom = rooms.find(
-        (room: ChatRoom) =>
-          room.type === "private" &&
-          room.participants.includes(otherUserId) &&
-          room.participants.includes(user.id) &&
-          room.participants.length === 2
-      );
-
-      if (existingRoom) {
-        return existingRoom;
-      }
-
-      const createResponse = await fetch(`${ENV.API_URL}/chat/rooms`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          type: "private",
-          participants: [user.id, otherUserId],
-        }),
-      });
-
-      console.log("URL:", `${ENV.API_URL}/chat/rooms`);
-      console.log("TOKEN:", token);
-      console.log("PARTICIPANTS:", [user.id, otherUserId]);
-
-      if (!createResponse.ok) {
-        const errorData = await createResponse.json();
-        throw new Error(errorData.message || "Failed to create chat room");
-      }
-
-      const newRoom = await createResponse.json();
-      setRooms((prev) => [...prev, newRoom]);
-      return newRoom;
-    } catch (error) {
-      console.error("Error getting/creating chat room:", error);
-      throw error;
+    if (existingRoom) {
+      return { id: existingRoom.id, ...existingRoom.data() } as ChatRoom;
     }
+
+    const newRoomRef = await addDoc(collection(db, 'chatRooms'), {
+      type: "private",
+      participants: [user.id, otherUserId],
+      createdAt: serverTimestamp(),
+    });
+
+    return {
+      id: newRoomRef.id,
+      type: "private",
+      participants: [user.id, otherUserId],
+      createdAt: serverTimestamp(),
+    };
   };
 
   const joinRoom = async (roomId: string) => {
-    if (!socket) return;
+    setCurrentRoom(roomId);
+    
+    if (!user?.id) return;
 
-    try {
-      if (currentRoom) {
-        socket.emit("leaveRoom", currentRoom);
-      }
+    const q = query(
+      collection(db, 'messages'),
+      where('roomId', '==', roomId),
+      where('senderId', '!=', user.id),
+      where('readStatus', '==', false)
+    );
 
-      console.log("Joining room:", roomId);
-      socket.emit("joinRoom", roomId);
-      setCurrentRoom(roomId);
-    } catch (error) {
-      console.error("Error joining room:", error);
-      throw error;
-    }
+    const querySnapshot = await getDocs(q);
+    querySnapshot.docs.forEach(async (document) => {
+      await updateDoc(doc(db, 'messages', document.id), {
+        readStatus: true
+      });
+    });
   };
 
-  const sendMessage = (content: string) => {
-    if (!socket || !currentRoom || !user) {
-      console.error("Cannot send message - missing requirements");
-      return;
+  const sendMessage = async (content: string, roomId: string) => {
+    if (!user?.id) return;
+
+    try {
+      const messageData = {
+        content,
+        senderId: user.id,
+        roomId,
+        timestamp: serverTimestamp(),
+        readStatus: false,
+      };
+
+      const messageRef = await addDoc(collection(db, 'messages'), messageData);
+
+      const roomRef = doc(db, 'chatRooms', roomId);
+      await updateDoc(roomRef, {
+        lastMessage: {
+          ...messageData,
+          id: messageRef.id
+        }
+      });
+
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
-
-    const messageData = {
-      roomId: currentRoom,
-      content: content.trim(),
-    };
-
-    console.log("Sending message:", messageData);
-    socket.emit("sendMessage", messageData);
   };
 
   const updateTypingStatus = (isTyping: boolean) => {
-    if (!socket || !currentRoom) return;
-    socket.emit(isTyping ? "typing" : "stopTyping", currentRoom);
+    if (!currentRoom || !user?.id) return;
+    
+    const typingRef = doc(db, 'chatRooms', currentRoom, 'typing', user.id);
+    setDoc(typingRef, {
+      isTyping,
+      timestamp: serverTimestamp(),
+    }, { merge: true }).catch(console.error);
   };
 
   return (
     <ChatContext.Provider
       value={{
-        socket,
         currentRoom,
         messages,
         rooms,

@@ -1,111 +1,169 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  SafeAreaView,
-  StatusBar,
-} from "react-native";
-import { useChat, ChatMessage } from "../context/ChatContext";
-import { useUser } from "@clerk/clerk-expo";
-import ChatHeader from "../components/chat/ChatHeader";
-import MessageList from "../components/chat/MessageList";
-import MessageComposer from "../components/chat/MessageComposer";
-import { COLORS, SPACING } from "../constants/theme";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../App";
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useChat } from '../context/ChatContext';
+import { RootStackParamList } from '../App';
+import { formatDistanceToNow } from 'date-fns';
+import { useUser } from '@clerk/clerk-expo';
 
-type Props = NativeStackScreenProps<RootStackParamList, "ChatRoom">;
+type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
 
-const ChatRoomScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { roomId, userName, userImage } = route.params;
-  const { messages, sendMessage, joinRoom, setTyping } = useChat();
+const ChatRoomScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute<ChatRoomScreenRouteProp>();
+  const { roomId, userName } = route.params;
+  const { messages, sendMessage, joinRoom } = useChat();
+  const [messageText, setMessageText] = useState('');
   const { user } = useUser();
-  const [isLoading, setIsLoading] = useState(true);
-  const [roomMessages, setRoomMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
-    // Filter messages for current room
-    setRoomMessages(messages.filter((msg) => msg.roomId === roomId));
-  }, [messages, roomId]);
-
-  useEffect(() => {
-    const initializeChat = async () => {
-      try {
-        await joinRoom(roomId);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error joining room:", error);
-        Alert.alert("Error", "Failed to join chat room");
-        navigation.goBack();
-      }
-    };
-
-    initializeChat();
+    joinRoom(roomId);
   }, [roomId]);
 
-  const handleSend = (content: string) => {
-    if (content.trim()) {
-      sendMessage(content);
+  const handleSend = async () => {
+    if (messageText.trim()) {
+      await sendMessage(messageText, roomId);
+      setMessageText('');
     }
   };
 
-  const handleTyping = (isTyping: boolean) => {
-    setTyping(isTyping);
+  const renderMessage = ({ item }) => {
+    const isMyMessage = item.senderId === user?.id;
+    const timestamp = item.timestamp
+      ? formatDistanceToNow(new Date(item.timestamp.seconds * 1000), { addSuffix: true })
+      : '';
+
+    return (
+      <View style={[
+        styles.messageContainer,
+        isMyMessage ? styles.myMessage : styles.otherMessage
+      ]}>
+        <Text style={[
+          styles.messageText,
+          isMyMessage ? styles.myMessageText : styles.otherMessageText
+        ]}>
+          {item.content}
+        </Text>
+        <Text style={styles.timestamp}>{timestamp}</Text>
+      </View>
+    );
   };
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
         >
-          <ChatHeader
-            name={userName}
-            image={userImage}
-            isOnline={true}
-            onBack={() => navigation.goBack()}
-          />
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.userName}>{userName}</Text>
+      </View>
 
-          <View style={styles.content}>
-            <MessageList
-              messages={roomMessages}
-              currentUserId={user?.id || ""}
-              isLoading={isLoading}
-            />
+      <FlatList
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.messagesList}
+        inverted
+      />
 
-            <MessageComposer
-              onSend={handleSend}
-              onTypingChange={handleTyping}
-            />
-          </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={messageText}
+          onChangeText={setMessageText}
+          placeholder="Type a message..."
+          multiline
+        />
+        <TouchableOpacity 
+          style={styles.sendButton}
+          onPress={handleSend}
+        >
+          <Ionicons name="send" size={24} color="#007AFF" />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#fff',
   },
-  content: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingTop: 60,
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  messagesList: {
+    padding: 16,
+    flexGrow: 1,
+  },
+  messageContainer: {
+    maxWidth: '80%',
+    marginVertical: 4,
+    padding: 12,
+    borderRadius: 16,
+  },
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#007AFF',
+  },
+  otherMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8E8E8',
+  },
+  messageText: {
+    fontSize: 16,
+  },
+  myMessageText: {
+    color: '#fff',
+  },
+  otherMessageText: {
+    color: '#000',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    alignItems: 'center',
+  },
+  input: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    maxHeight: 100,
+  },
+  sendButton: {
+    padding: 8,
   },
 });
 

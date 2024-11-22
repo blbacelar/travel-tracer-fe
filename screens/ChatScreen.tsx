@@ -1,133 +1,120 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  FlatList,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { COLORS, SPACING } from "../constants/theme";
-import ChatHeader from "../components/chat/ChatHeader";
-import MessageComposer from "../components/chat/MessageComposer";
-import ChatBubble from "../components/chat/ChatBubble";
-import DateSeparator from "../components/chat/DateSeparator";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../App";
-import { useChat } from "../context/ChatContext";
-import { useUser } from "@clerk/clerk-expo";
-import ChatListScreen from "./ChatListScreen";
-import ChatRoomScreen from "./ChatRoomScreen";
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '@clerk/clerk-expo';
+import { useChat } from '../context/ChatContext';
 
-type Props = NativeStackScreenProps<RootStackParamList, "Chat">;
+type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 
-interface Message {
-  id: string;
-  text: string;
-  sender: "user" | "other";
-  timestamp: Date;
-  status: "sent" | "delivered" | "read";
-  attachments?: { type: "image" | "file"; url: string }[];
-}
-
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: "1",
-    text: "Hi! I saw you visited Paris last month. How was your experience?",
-    sender: "other",
-    timestamp: new Date("2024-03-10T10:00:00"),
-    status: "read",
-  },
-  {
-    id: "2",
-    text: "Hey! Yes, it was amazing! The city is beautiful, especially in spring.",
-    sender: "user",
-    timestamp: new Date("2024-03-10T10:02:00"),
-    status: "read",
-  },
-  {
-    id: "3",
-    text: "Here are some photos from my trip:",
-    sender: "user",
-    timestamp: new Date("2024-03-10T10:02:30"),
-    status: "read",
-    attachments: [
-      { type: "image", url: "https://example.com/paris1.jpg" },
-      { type: "image", url: "https://example.com/paris2.jpg" },
-    ],
-  },
-];
-
-const ChatScreen: React.FC<Props> = ({ navigation }) => {
-  const { user: currentUser } = useUser();
+const ChatScreen = () => {
+  const navigation = useNavigation<ChatScreenNavigationProp>();
+  const { user } = useUser();
   const { getOrCreateChatRoom } = useChat();
 
-  const handleUserSelect = async (userId: string, userName: string, userImage: string) => {
+  const handleStartChat = async () => {
     try {
-      if (!currentUser?.id) {
-        throw new Error("No current user found");
-      }
-
-      console.log("Getting or creating chat room with:", userId);
-
-      const room = await getOrCreateChatRoom(userId);
-
-      console.log("Room:", room);
-
-      navigation.navigate("ChatRoom", {
-        roomId: room.id,
-        userName: userName,
-        userImage: userImage,
-      });
+      // For now, navigate to ChatList
+      navigation.navigate('ChatList');
     } catch (error) {
-      console.error("Error with chat room:", error);
-      Alert.alert(
-        "Error",
-        error instanceof Error
-          ? error.message
-          : "Failed to start chat. Please try again."
-      );
+      console.error('Error starting chat:', error);
     }
   };
 
-  return <ChatListScreen onUserSelect={handleUserSelect} />;
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Messages</Text>
+      </View>
+
+      <View style={styles.content}>
+        <TouchableOpacity 
+          style={styles.chatListButton}
+          onPress={handleStartChat}
+        >
+          <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
+          <Text style={styles.buttonText}>View All Chats</Text>
+        </TouchableOpacity>
+
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoText}>
+            Start chatting with other travelers!
+          </Text>
+          <Text style={styles.subInfoText}>
+            Connect and share experiences with people from around the world.
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: Platform.OS === "android" ? SPACING.xl : 0,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingTop: 60, // Adjust for status bar
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   content: {
     flex: 1,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  messageList: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+  chatListButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    width: '80%',
+    justifyContent: 'center',
   },
-  typingIndicator: {
-    padding: SPACING.sm,
-    backgroundColor: COLORS.background,
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 10,
   },
-  typingText: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    fontStyle: "italic",
+  infoContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  infoText: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subInfoText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });
-
-const isSameDay = (date1: Date, date2: Date) => {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
-};
 
 export default ChatScreen;
