@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather } from "@expo/vector-icons";
 
 export interface Weather {
   temperature: number;
@@ -20,7 +20,36 @@ export interface Location {
 
 export type FeatherIconName = keyof typeof Feather.glyphMap;
 
-export type WeatherCondition = 'Clear' | 'Partly cloudy' | 'Cloudy' | 'Rain' | 'Snow' | null;
+export type WeatherCondition =
+  | "Clear"
+  | "Partly cloudy"
+  | "Cloudy"
+  | "Rain"
+  | "Light rain"
+  | "Heavy rain"
+  | "Thunderstorm"
+  | "Snow"
+  | "Light snow"
+  | "Heavy snow"
+  | "Sleet"
+  | "Freezing rain"
+  | "Drizzle"
+  | "Light drizzle"
+  | "Heavy drizzle"
+  | "Shower rain"
+  | "Light shower rain"
+  | "Heavy shower rain"
+  | "Fog"
+  | "Mist"
+  | "Haze"
+  | "Smoke"
+  | "Dust"
+  | "Sand"
+  | "Squall"
+  | "Tornado"
+  | "Hurricane"
+  | "Tropical storm"
+  | null;
 
 export interface WeatherOption {
   label: string;
@@ -41,4 +70,4 @@ export interface SearchBarProps {
 
 export interface SearchBarMethods {
   fetchLocations: (filters: SearchFilters) => void;
-} 
+}

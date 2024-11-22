@@ -12,7 +12,15 @@ const weatherOptions: WeatherOption[] = [
   { label: 'Partly Cloudy', value: 'Partly cloudy', icon: 'cloud' },
   { label: 'Cloudy', value: 'Cloudy', icon: 'cloud' },
   { label: 'Rain', value: 'Rain', icon: 'cloud-rain' },
+  { label: 'Light Rain', value: 'Light rain', icon: 'cloud-drizzle' },
+  { label: 'Heavy Rain', value: 'Heavy rain', icon: 'cloud-rain' },
+  { label: 'Thunderstorm', value: 'Thunderstorm', icon: 'cloud-lightning' },
   { label: 'Snow', value: 'Snow', icon: 'cloud-snow' },
+  { label: 'Light Snow', value: 'Light snow', icon: 'cloud-snow' },
+  { label: 'Sleet', value: 'Sleet', icon: 'cloud-drizzle' },
+  { label: 'Fog', value: 'Fog', icon: 'wind' },
+  { label: 'Mist', value: 'Mist', icon: 'wind' },
+  { label: 'Haze', value: 'Haze', icon: 'wind' },
 ];
 
 const SearchBar = () => {

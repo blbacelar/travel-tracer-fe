@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Image,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,7 +26,7 @@ type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, "ChatRoom">;
 const ChatRoomScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<ChatRoomScreenRouteProp>();
-  const { roomId, userName } = route.params;
+  const { roomId, userName, userImage } = route.params;
   const { messages, sendMessage, joinRoom, setTyping, isTyping } = useChat();
   const [messageText, setMessageText] = useState("");
   const { user } = useUser();
@@ -125,9 +126,24 @@ const ChatRoomScreen = () => {
         >
           <Ionicons name="arrow-back" size={24} color={colors.textDark} />
         </TouchableOpacity>
-        <Text style={[styles.userName, { color: colors.textDark }]}>
-          {userName}
-        </Text>
+        <View style={styles.userInfo}>
+          {userImage ? (
+            <Image 
+              source={{ uri: userImage }} 
+              style={styles.userImage}
+              defaultSource={require("../assets/default-avatar.png")}
+            />
+          ) : (
+            <View style={styles.userImagePlaceholder}>
+              <Text style={styles.userImagePlaceholderText}>
+                {userName[0]?.toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text style={[styles.userName, { color: colors.textDark }]}>
+            {userName}
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -195,6 +211,31 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 16,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  userImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  userImagePlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  userImagePlaceholderText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.primary,
   },
   userName: {
     fontSize: 18,
