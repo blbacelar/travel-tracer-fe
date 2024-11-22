@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useChat } from "../context/ChatContext";
 import { RootStackParamList } from "../App";
 import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@clerk/clerk-expo";
+import { debounce } from "lodash";
 
 type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, "ChatRoom">;
 
@@ -23,20 +24,25 @@ const ChatRoomScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<ChatRoomScreenRouteProp>();
   const { roomId, userName } = route.params;
-  const { messages, sendMessage, joinRoom } = useChat();
+  const { messages, sendMessage, joinRoom, setTyping, isTyping } = useChat();
   const [messageText, setMessageText] = useState("");
   const { user } = useUser();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  const debouncedSetTyping = useMemo(
+    () => debounce((typing: boolean) => setTyping(typing), 500),
+    [setTyping]
+  );
 
   useEffect(() => {
     joinRoom(roomId);
   }, [roomId]);
 
   useEffect(() => {
-    const keyboardWillShow = Keyboard.addListener('keyboardWillShow', () => {
+    const keyboardWillShow = Keyboard.addListener("keyboardWillShow", () => {
       setKeyboardVisible(true);
     });
-    const keyboardWillHide = Keyboard.addListener('keyboardWillHide', () => {
+    const keyboardWillHide = Keyboard.addListener("keyboardWillHide", () => {
       setKeyboardVisible(false);
     });
 
@@ -46,12 +52,27 @@ const ChatRoomScreen = () => {
     };
   }, []);
 
+  useEffect(() => {
+    console.log("Typing status:", isTyping);
+  }, [isTyping]);
+
   const handleSend = async () => {
     if (messageText.trim()) {
       await sendMessage(messageText, roomId);
       setMessageText("");
     }
   };
+
+  const handleTextChange = (text: string) => {
+    setMessageText(text);
+    setTyping(text.length > 0);
+  };
+
+  useEffect(() => {
+    return () => {
+      setTyping(false);
+    };
+  }, []);
 
   const renderMessage = ({ item }: { item: any }) => {
     const isMyMessage = item.senderId === user?.id;
@@ -81,6 +102,17 @@ const ChatRoomScreen = () => {
     );
   };
 
+  const renderTypingIndicator = () => {
+    const typingUserId = Object.keys(isTyping).find((id) => id !== user?.id);
+    if (!typingUserId || !isTyping[typingUserId]) return null;
+
+    return (
+      <View style={styles.typingIndicator}>
+        <Text style={styles.typingText}>{userName} is typing...</Text>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -101,19 +133,20 @@ const ChatRoomScreen = () => {
         inverted
       />
 
-      {Platform.OS === 'ios' ? (
-        <KeyboardAvoidingView
-          behavior="padding"
-          keyboardVerticalOffset={0}
-        >
-          <View style={[
-            styles.inputContainer,
-            !keyboardVisible && styles.inputContainerWithMargin
-          ]}>
+      {renderTypingIndicator()}
+
+      {Platform.OS === "ios" ? (
+        <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={0}>
+          <View
+            style={[
+              styles.inputContainer,
+              !keyboardVisible && styles.inputContainerWithMargin,
+            ]}
+          >
             <TextInput
               style={styles.input}
               value={messageText}
-              onChangeText={setMessageText}
+              onChangeText={handleTextChange}
               placeholder="Type a message..."
               placeholderTextColor="#999"
               multiline
@@ -128,7 +161,7 @@ const ChatRoomScreen = () => {
           <TextInput
             style={styles.input}
             value={messageText}
-            onChangeText={setMessageText}
+            onChangeText={handleTextChange}
             placeholder="Type a message..."
             placeholderTextColor="#999"
             multiline
@@ -219,6 +252,19 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     padding: 8,
+  },
+  typingIndicator: {
+    padding: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#f0f0f0",
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  typingText: {
+    color: "#666",
+    fontSize: 12,
+    fontStyle: "italic",
   },
 });
 

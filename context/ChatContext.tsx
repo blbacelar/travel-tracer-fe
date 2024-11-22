@@ -36,7 +36,7 @@ interface ChatContextType {
   currentRoom: string | null;
   messages: ChatMessage[];
   rooms: ChatRoom[];
-  isTyping: { [key: string]: boolean };
+  isTyping: { [key: string]: { isTyping: boolean, userName: string } };
   sendMessage: (content: string, roomId: string) => Promise<void>;
   joinRoom: (roomId: string) => Promise<void>;
   getOrCreateChatRoom: (otherUserId: string) => Promise<ChatRoom>;
@@ -51,7 +51,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [typingUsers, setTypingUsers] = useState<{ [key: string]: boolean }>({});
+  const [typingUsers, setTypingUsers] = useState<{ [key: string]: { isTyping: boolean, userName: string } }>({});
   const { user } = useUser();
 
   useEffect(() => {
@@ -88,6 +88,32 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         ...doc.data()
       })) as ChatMessage[];
       setMessages(updatedMessages);
+    });
+
+    return () => unsubscribe();
+  }, [currentRoom]);
+
+  useEffect(() => {
+    if (!currentRoom) return;
+
+    // Listen for typing status changes
+    const typingRef = collection(db, 'chatRooms', currentRoom, 'typing');
+    const q = query(typingRef, where('isTyping', '==', true));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const typing: { [key: string]: { isTyping: boolean, userName: string } } = {};
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp?.toDate();
+        // Only show typing indicator if timestamp is within last 5 seconds
+        if (timestamp && (Date.now() - timestamp.getTime()) < 5000) {
+          typing[doc.id] = {
+            isTyping: true,
+            userName: data.userName || 'User'
+          };
+        }
+      });
+      setTypingUsers(typing);
     });
 
     return () => unsubscribe();
@@ -177,11 +203,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateTypingStatus = (isTyping: boolean) => {
     if (!currentRoom || !user?.id) return;
     
-    const typingRef = doc(db, 'chatRooms', currentRoom, 'typing', user.id);
-    setDoc(typingRef, {
-      isTyping,
-      timestamp: serverTimestamp(),
-    }, { merge: true }).catch(console.error);
+    try {
+      const typingRef = doc(db, 'chatRooms', currentRoom, 'typing', user.id);
+      setDoc(typingRef, {
+        isTyping,
+        timestamp: serverTimestamp(),
+        userId: user.id,
+        userName: user.firstName || user.lastName || 'User'
+      }).catch(console.error);
+    } catch (error) {
+      console.error('Error updating typing status:', error);
+    }
   };
 
   return (
