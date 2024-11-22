@@ -23,6 +23,8 @@ export interface ChatMessage {
   timestamp: any;
   roomId: string;
   readStatus: boolean;
+  isEdited?: boolean;
+  deletedAt?: any;
 }
 
 export interface ChatRoom {
@@ -43,6 +45,8 @@ interface ChatContextType {
   getOrCreateChatRoom: (otherUserId: string) => Promise<ChatRoom>;
   setTyping: (isTyping: boolean) => void;
   unreadCount: number;
+  editMessage: (messageId: string, newContent: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -261,6 +265,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const editMessage = async (messageId: string, newContent: string) => {
+    try {
+      const messageRef = doc(db, 'messages', messageId);
+      await updateDoc(messageRef, {
+        content: newContent,
+        isEdited: true,
+      });
+    } catch (error) {
+      console.error('Error editing message:', error);
+      throw error;
+    }
+  };
+
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const messageRef = doc(db, 'messages', messageId);
+      await updateDoc(messageRef, {
+        deletedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      throw error;
+    }
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -273,6 +302,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         getOrCreateChatRoom,
         setTyping: updateTypingStatus,
         unreadCount,
+        editMessage,
+        deleteMessage,
       }}
     >
       {children}

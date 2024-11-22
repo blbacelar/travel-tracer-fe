@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -10,16 +10,18 @@ import {
   Platform,
   Keyboard,
   Image,
+  Alert,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { useChat } from "../context/ChatContext";
+import { useChat, ChatMessage } from "../context/ChatContext";
 import { RootStackParamList } from "../App";
 import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@clerk/clerk-expo";
 import { debounce } from "lodash";
 import { useTheme } from "../context/ThemeContext";
 import { COLORS } from "../constants/theme";
+import { Swipeable } from 'react-native-gesture-handler';
 
 type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, "ChatRoom">;
 
@@ -27,11 +29,13 @@ const ChatRoomScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<ChatRoomScreenRouteProp>();
   const { roomId, userName, userImage } = route.params;
-  const { messages, sendMessage, joinRoom, setTyping, isTyping } = useChat();
+  const { messages, sendMessage, joinRoom, setTyping, isTyping, editMessage, deleteMessage } = useChat();
   const [messageText, setMessageText] = useState("");
   const { user } = useUser();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const { colors } = useTheme();
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  const swipeableRef = useRef<Swipeable | null>(null);
 
   const debouncedSetTyping = useMemo(
     () => debounce((typing: boolean) => setTyping(typing), 500),
@@ -60,10 +64,70 @@ const ChatRoomScreen = () => {
     console.log("Typing status:", isTyping);
   }, [isTyping]);
 
+  const handleMessageLongPress = (message: ChatMessage) => {
+    if (message.senderId !== user?.id) return;
+    
+    Alert.alert(
+      'Message Actions',
+      'What would you like to do with this message?',
+      [
+        {
+          text: 'Edit',
+          onPress: () => {
+            setEditingMessage(message);
+            setMessageText(message.content);
+          },
+        },
+        {
+          text: 'Delete',
+          onPress: () => {
+            Alert.alert(
+              'Delete Message',
+              'Are you sure you want to delete this message?',
+              [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteMessage(message.id);
+                    } catch (error) {
+                      console.error('Error deleting message:', error);
+                    }
+                  },
+                },
+              ],
+            );
+          },
+          style: 'destructive',
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+    );
+  };
+
   const handleSend = async () => {
     if (messageText.trim()) {
-      await sendMessage(messageText, roomId);
-      setMessageText("");
+      if (editingMessage) {
+        try {
+          await editMessage(editingMessage.id, messageText);
+          setEditingMessage(null);
+          setMessageText('');
+          swipeableRef.current?.close();
+        } catch (error) {
+          console.error('Error editing message:', error);
+        }
+      } else {
+        await sendMessage(messageText, roomId);
+        setMessageText('');
+      }
     }
   };
 
@@ -78,7 +142,52 @@ const ChatRoomScreen = () => {
     };
   }, []);
 
-  const renderMessage = ({ item }: { item: any }) => {
+  const renderRightActions = (message: ChatMessage) => {
+    if (message.senderId !== user?.id) return null;
+
+    return (
+      <View style={styles.messageActions}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.editButton]}
+          onPress={() => {
+            setEditingMessage(message);
+            setMessageText(message.content);
+          }}
+        >
+          <Ionicons name="pencil" size={20} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.deleteButton]}
+          onPress={() => {
+            Alert.alert(
+              'Delete Message',
+              'Are you sure you want to delete this message?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => deleteMessage(message.id),
+                },
+              ],
+            );
+          }}
+        >
+          <Ionicons name="trash" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderMessage = ({ item }: { item: ChatMessage }) => {
+    if (item.deletedAt) {
+      return (
+        <View style={[styles.messageContainer, styles.deletedMessage]}>
+          <Text style={styles.deletedMessageText}>Message deleted</Text>
+        </View>
+      );
+    }
+
     const isMyMessage = item.senderId === user?.id;
     const timestamp = item.timestamp
       ? formatDistanceToNow(new Date(item.timestamp.seconds * 1000), {
@@ -87,22 +196,33 @@ const ChatRoomScreen = () => {
       : "";
 
     return (
-      <View
-        style={[
-          styles.messageContainer,
-          isMyMessage ? styles.myMessage : styles.otherMessage,
-        ]}
+      <Swipeable
+        ref={item.id === editingMessage?.id ? swipeableRef : null}
+        renderRightActions={() => renderRightActions(item)}
+        enabled={isMyMessage}
       >
-        <Text
+        <View
           style={[
-            styles.messageText,
-            isMyMessage ? styles.myMessageText : styles.otherMessageText,
+            styles.messageContainer,
+            isMyMessage ? styles.myMessage : styles.otherMessage,
           ]}
         >
-          {item.content}
-        </Text>
-        <Text style={styles.timestamp}>{timestamp}</Text>
-      </View>
+          <Text
+            style={[
+              styles.messageText,
+              isMyMessage ? styles.myMessageText : styles.otherMessageText,
+            ]}
+          >
+            {item.content}
+          </Text>
+          <View style={styles.messageFooter}>
+            {item.isEdited && (
+              <Text style={styles.editedText}>(edited)</Text>
+            )}
+            <Text style={styles.timestamp}>{timestamp}</Text>
+          </View>
+        </View>
+      </Swipeable>
     );
   };
 
@@ -153,6 +273,20 @@ const ChatRoomScreen = () => {
         contentContainerStyle={styles.messagesList}
         inverted
       />
+
+      {editingMessage && (
+        <View style={styles.editingContainer}>
+          <Text style={styles.editingText}>Editing message</Text>
+          <TouchableOpacity 
+            onPress={() => {
+              setEditingMessage(null);
+              setMessageText('');
+            }}
+          >
+            <Text style={styles.cancelEditText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {renderTypingIndicator()}
 
@@ -311,6 +445,62 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 12,
     fontStyle: "italic",
+  },
+  deletedMessage: {
+    backgroundColor: COLORS.border,
+    alignSelf: "center",
+    maxWidth: "60%",
+  },
+  deletedMessageText: {
+    color: COLORS.textLight,
+    fontStyle: "italic",
+  },
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+  },
+  editedText: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginRight: 4,
+    fontStyle: "italic",
+  },
+  editingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: COLORS.border,
+  },
+  editingText: {
+    color: COLORS.textDark,
+    fontSize: 14,
+  },
+  cancelEditText: {
+    color: COLORS.error,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  messageActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editButton: {
+    backgroundColor: COLORS.primary,
+  },
+  deleteButton: {
+    backgroundColor: COLORS.error,
   },
 });
 

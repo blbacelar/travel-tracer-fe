@@ -22,6 +22,7 @@ import { tokenCache } from './clerk';
 import * as WebBrowser from 'expo-web-browser';
 import { ChatProvider } from './context/ChatContext';
 import ChatListScreen from './screens/ChatListScreen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -52,43 +53,45 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <ClerkProvider 
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
-      tokenCache={tokenCache}
-      appearance={{
-        baseTheme: undefined
-      }}
-    >
-      <ThemeProvider>
-        <LocationProvider>
-          <FavoritesProvider>
-            <ReviewsProvider>
-              <ChatProvider>
-                <NavigationContainer>
-                  <StatusBar style="dark" />
-                  <Stack.Navigator
-                    screenOptions={{
-                      headerShown: false,
-                    }}
-                  >
-                    <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-                    <Stack.Screen name="Login" component={LoginScreen} />
-                    <Stack.Screen name="Register" component={RegisterScreen} />
-                    <Stack.Screen name="Main" component={MainScreen} />
-                    <Stack.Screen name="Destination" component={DestinationScreen} />
-                    <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
-                    <Stack.Screen name="Chat" component={ChatScreen} />
-                    <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
-                    <Stack.Screen name="Profile" component={ProfileScreen} />
-                    <Stack.Screen name="ChatList" component={ChatListScreen} />
-                  </Stack.Navigator>
-                </NavigationContainer>
-              </ChatProvider>
-            </ReviewsProvider>
-          </FavoritesProvider>
-        </LocationProvider>
-      </ThemeProvider>
-    </ClerkProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ClerkProvider 
+        publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+        tokenCache={tokenCache}
+        appearance={{
+          baseTheme: undefined
+        }}
+      >
+        <ThemeProvider>
+          <LocationProvider>
+            <FavoritesProvider>
+              <ReviewsProvider>
+                <ChatProvider>
+                  <NavigationContainer>
+                    <StatusBar style="dark" />
+                    <Stack.Navigator
+                      screenOptions={{
+                        headerShown: false,
+                      }}
+                    >
+                      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                      <Stack.Screen name="Login" component={LoginScreen} />
+                      <Stack.Screen name="Register" component={RegisterScreen} />
+                      <Stack.Screen name="Main" component={MainScreen} />
+                      <Stack.Screen name="Destination" component={DestinationScreen} />
+                      <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+                      <Stack.Screen name="Chat" component={ChatScreen} />
+                      <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
+                      <Stack.Screen name="Profile" component={ProfileScreen} />
+                      <Stack.Screen name="ChatList" component={ChatListScreen} />
+                    </Stack.Navigator>
+                  </NavigationContainer>
+                </ChatProvider>
+              </ReviewsProvider>
+            </FavoritesProvider>
+          </LocationProvider>
+        </ThemeProvider>
+      </ClerkProvider>
+    </GestureHandlerRootView>
   );
 }
 
