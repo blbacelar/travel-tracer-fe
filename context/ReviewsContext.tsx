@@ -1,68 +1,89 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { collection, query, where, orderBy, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { useUser } from '@clerk/clerk-expo';
 
 export interface Review {
   id: string;
   locationId: string;
-  user: string;
+  userId: string;
+  userName: string;
+  userImage?: string;
   rating: number;
   comment: string;
-  date: string;
+  timestamp: any;
 }
 
 interface ReviewsContextType {
   reviews: Review[];
-  addReview: (locationId: string, rating: number, comment: string) => void;
+  addReview: (locationId: string, rating: number, comment: string) => Promise<void>;
   getLocationReviews: (locationId: string) => Review[];
   getLocationRating: (locationId: string) => { rating: number; total: number };
 }
 
 const ReviewsContext = createContext<ReviewsContextType | undefined>(undefined);
 
-const REVIEWS_STORAGE_KEY = '@travel_tracer_reviews';
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return new Date();
+  
+  // Handle Firestore Timestamp
+  if (timestamp.seconds) {
+    return new Date(timestamp.seconds * 1000);
+  }
+  
+  // Handle regular Date objects
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  
+  return new Date();
+};
 
 export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const { user } = useUser();
 
-  // Load reviews from storage
+  // Load reviews from Firestore
   useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        const storedReviews = await AsyncStorage.getItem(REVIEWS_STORAGE_KEY);
-        if (storedReviews) {
-          setReviews(JSON.parse(storedReviews));
-        }
-      } catch (error) {
-        console.error('Error loading reviews:', error);
-      }
-    };
-    loadReviews();
+    const q = query(
+      collection(db, 'reviews'),
+      orderBy('timestamp', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const loadedReviews = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          timestamp: formatTimestamp(data.timestamp)
+        };
+      }) as Review[];
+      setReviews(loadedReviews);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Save reviews to storage
-  const saveReviews = async (newReviews: Review[]) => {
-    try {
-      await AsyncStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(newReviews));
-    } catch (error) {
-      console.error('Error saving reviews:', error);
-    }
-  };
+  const addReview = async (locationId: string, rating: number, comment: string) => {
+    if (!user) return;
 
-  const addReview = (locationId: string, rating: number, comment: string) => {
-    const newReview: Review = {
-      id: Date.now().toString(),
+    const newReview = {
       locationId,
-      user: 'John Doe', // In a real app, this would come from user authentication
+      userId: user.id,
+      userName: user.fullName || 'Anonymous',
+      userImage: user.imageUrl,
       rating,
       comment,
-      date: 'Just now', // In a real app, use proper date formatting
+      timestamp: serverTimestamp(),
     };
 
-    setReviews(prev => {
-      const newReviews = [...prev, newReview];
-      saveReviews(newReviews);
-      return newReviews;
-    });
+    try {
+      await addDoc(collection(db, 'reviews'), newReview);
+    } catch (error) {
+      console.error('Error adding review:', error);
+      throw error;
+    }
   };
 
   const getLocationReviews = (locationId: string) => {

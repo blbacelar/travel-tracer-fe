@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -7,21 +7,23 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Platform,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../constants/theme';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
-import AddReviewModal from '../components/destination/AddReviewModal';
-import { useReviews } from '../context/ReviewsContext';
+  Image,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { COLORS, SPACING } from "../constants/theme";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../App";
+import AddReviewModal from "../components/destination/AddReviewModal";
+import { useReviews } from "../context/ReviewsContext";
+import { formatDistanceToNow } from "date-fns";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'AllReviews'>;
+type Props = NativeStackScreenProps<RootStackParamList, "AllReviews">;
 
 const AllReviewsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [showAddReview, setShowAddReview] = useState(false);
   const { locationName, locationId } = route.params;
   const { getLocationReviews, getLocationRating, addReview } = useReviews();
-  
+
   const reviews = getLocationReviews(locationId);
   const { rating, total: totalReviews } = getLocationRating(locationId);
 
@@ -41,11 +43,34 @@ const AllReviewsScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   };
 
-  const renderReview = ({ item }: { item: typeof reviews[0] }) => (
+  const formatReviewDate = (timestamp: any) => {
+    try {
+      if (!timestamp) return "";
+      const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      return "";
+    }
+  };
+
+  const renderReview = ({ item }: { item: (typeof reviews)[0] }) => (
     <View style={styles.reviewCard}>
       <View style={styles.reviewHeader}>
-        <Text style={styles.userName}>{item.user}</Text>
-        <Text style={styles.reviewDate}>{item.date}</Text>
+        <View style={styles.userInfo}>
+          {item.userImage ? (
+            <Image source={{ uri: item.userImage }} style={styles.userImage} />
+          ) : (
+            <View style={styles.userImagePlaceholder}>
+              <Text style={styles.userImagePlaceholderText}>
+                {item.userName[0]?.toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.userName}>{item.userName}</Text>
+        </View>
+        {/* <Text style={styles.reviewDate}>
+          {formatReviewDate(item.timestamp)}
+        </Text> */}
       </View>
       {renderStars(item.rating)}
       <Text style={styles.reviewText}>{item.comment}</Text>
@@ -111,25 +136,25 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SPACING.md,
-    paddingTop: Platform.OS === 'android' ? SPACING.xl : SPACING.md,
+    paddingTop: Platform.OS === "android" ? SPACING.xl : SPACING.md,
     paddingBottom: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
   },
   backButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   ratingContainer: {
     padding: SPACING.md,
@@ -138,23 +163,23 @@ const styles = StyleSheet.create({
   },
   locationName: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.textDark,
     marginBottom: SPACING.sm,
   },
   ratingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   ratingNumber: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.textDark,
     marginRight: SPACING.sm,
   },
   starsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   star: {
     marginRight: 2,
@@ -176,14 +201,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: SPACING.xs,
   },
   userName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
   },
   reviewDate: {
@@ -203,9 +228,9 @@ const styles = StyleSheet.create({
   },
   addReviewButton: {
     backgroundColor: COLORS.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: SPACING.sm,
     borderRadius: 12,
     gap: SPACING.xs,
@@ -213,8 +238,33 @@ const styles = StyleSheet.create({
   addReviewButtonText: {
     color: COLORS.background,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  userImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: SPACING.xs,
+  },
+  userImagePlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.border,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: SPACING.xs,
+  },
+  userImagePlaceholderText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: COLORS.primary,
   },
 });
 
-export default AllReviewsScreen; 
+export default AllReviewsScreen;
