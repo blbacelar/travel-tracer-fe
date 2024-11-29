@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   StyleSheet,
   View,
@@ -6,59 +6,128 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../../constants/theme';
-import { Location } from '../../types/api';
+  ActivityIndicator,
+  Linking,
+  Alert,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { COLORS, SPACING } from "../../constants/theme";
+import { Location } from "../../types/api";
+import { useState, useEffect } from "react";
+import {
+  fetchNearbyAccommodations,
+  getPlacePhoto,
+} from "../../services/places";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../App";
+
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Destination"
+>;
 
 interface AccommodationCarouselProps {
   location: Location;
 }
 
-// Temporary mock data - in a real app, this would come from an API
-const MOCK_ACCOMMODATIONS = [
-  {
-    id: '1',
-    name: 'Grand Hotel',
-    type: 'Hotel',
-    price: '$200',
-    rating: 4.5,
-    image: 'https://picsum.photos/200/300',
-  },
-  {
-    id: '2',
-    name: 'Cozy Villa',
-    type: 'Villa',
-    price: '$350',
-    rating: 4.8,
-    image: 'https://picsum.photos/200/301',
-  },
-  {
-    id: '3',
-    name: 'City Apartment',
-    type: 'Apartment',
-    price: '$150',
-    rating: 4.2,
-    image: 'https://picsum.photos/200/302',
-  },
-];
+const AccommodationCarousel: React.FC<AccommodationCarouselProps> = ({
+  location,
+}) => {
+  const navigation = useNavigation<NavigationProp>();
+  const [accommodations, setAccommodations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const AccommodationCarousel: React.FC<AccommodationCarouselProps> = () => {
+  useEffect(() => {
+    const fetchAccommodations = async () => {
+      try {
+        setIsLoading(true);
+        const places = await fetchNearbyAccommodations(
+          location.latitude,
+          location.longitude
+        );
+
+        const placesWithPhotos = await Promise.all(
+          places.map(async (place) => ({
+            ...place,
+            image: place.photos?.[0]
+              ? await getPlacePhoto(place.photos[0].photo_reference)
+              : "https://picsum.photos/200/300", // fallback image
+            website: place.website || null,
+          }))
+        );
+
+        setAccommodations(placesWithPhotos);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch accommodations"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAccommodations();
+  }, [location]);
+
+  const handleSeeAll = () => {
+    navigation.navigate("AccommodationList", {
+      accommodations: accommodations,
+    });
+  };
+
+  const handleWebsitePress = async (website: string | null) => {
+    if (!website) {
+      Alert.alert("No Website", "This place doesn't have a website listed.");
+      return;
+    }
+    try {
+      await Linking.openURL(website);
+    } catch (error) {
+      Alert.alert("Error", "Cannot open this website");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Failed to load accommodations</Text>
+      </View>
+    );
+  }
+
+  if (accommodations.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No accommodations found nearby</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Where to Stay</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleSeeAll}>
           <Text style={styles.seeAll}>See All</Text>
         </TouchableOpacity>
       </View>
-      
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {MOCK_ACCOMMODATIONS.map((accommodation) => (
+        {accommodations.map((accommodation) => (
           <TouchableOpacity
             key={accommodation.id}
             style={styles.accommodationCard}
@@ -69,12 +138,27 @@ const AccommodationCarousel: React.FC<AccommodationCarouselProps> = () => {
             />
             <View style={styles.cardContent}>
               <Text style={styles.accommodationName}>{accommodation.name}</Text>
-              <Text style={styles.accommodationType}>{accommodation.type}</Text>
+              <Text style={styles.accommodationType}>
+                {accommodation.type.charAt(0).toUpperCase() +
+                  accommodation.type.slice(1)}
+              </Text>
               <View style={styles.ratingContainer}>
                 <Feather name="star" size={14} color={COLORS.primary} />
-                <Text style={styles.rating}>{accommodation.rating}</Text>
+                <Text style={styles.rating}>
+                  {accommodation.rating.toFixed(1)}
+                </Text>
               </View>
-              <Text style={styles.price}>{accommodation.price}/night</Text>
+              <TouchableOpacity
+                style={styles.websiteButton}
+                onPress={() => handleWebsitePress(accommodation.website)}
+              >
+                <Feather name="globe" size={14} color={COLORS.primary} />
+                <Text style={styles.websiteText}>
+                  {accommodation.website
+                    ? "Visit Website"
+                    : "No Website Available"}
+                </Text>
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
         ))}
@@ -88,15 +172,15 @@ const styles = StyleSheet.create({
     marginVertical: SPACING.md,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: SPACING.md,
     marginBottom: SPACING.sm,
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
   },
   seeAll: {
@@ -111,15 +195,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: 12,
     marginRight: SPACING.md,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   accommodationImage: {
-    width: '100%',
+    width: "100%",
     height: 120,
   },
   cardContent: {
@@ -127,7 +211,7 @@ const styles = StyleSheet.create({
   },
   accommodationName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
     marginBottom: SPACING.xs,
   },
@@ -137,8 +221,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.xs,
     marginBottom: SPACING.xs,
   },
@@ -148,9 +232,39 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
+    color: COLORS.primary,
+  },
+  loadingContainer: {
+    padding: SPACING.xl,
+    alignItems: "center",
+  },
+  errorContainer: {
+    padding: SPACING.xl,
+    alignItems: "center",
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 14,
+  },
+  emptyContainer: {
+    padding: SPACING.xl,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: COLORS.textLight,
+    fontSize: 14,
+  },
+  websiteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    marginTop: SPACING.xs,
+  },
+  websiteText: {
+    fontSize: 14,
     color: COLORS.primary,
   },
 });
 
-export default AccommodationCarousel; 
+export default AccommodationCarousel;

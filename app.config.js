@@ -14,6 +14,9 @@ export default {
     ios: {
       bundleIdentifier: "com.blbacelar.traveltracerfe",
       supportsTablet: true
-    }
+    },
+    extra: {
+      EXPO_PUBLIC_GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
+    },
   }
 }; 

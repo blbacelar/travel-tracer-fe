@@ -23,6 +23,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { ChatProvider } from './context/ChatContext';
 import ChatListScreen from './screens/ChatListScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AccommodationListScreen from './screens/AccommodationListScreen';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -47,6 +48,9 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   EditProfile: undefined;
+  AccommodationList: {
+    accommodations: any[];
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -83,6 +87,10 @@ export default function App() {
                       <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
                       <Stack.Screen name="Profile" component={ProfileScreen} />
                       <Stack.Screen name="ChatList" component={ChatListScreen} />
+                      <Stack.Screen 
+                        name="AccommodationList" 
+                        component={AccommodationListScreen} 
+                      />
                     </Stack.Navigator>
                   </NavigationContainer>
                 </ChatProvider>
