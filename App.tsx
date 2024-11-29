@@ -24,6 +24,8 @@ import { ChatProvider } from './context/ChatContext';
 import ChatListScreen from './screens/ChatListScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AccommodationListScreen from './screens/AccommodationListScreen';
+import { TripProvider } from './context/TripContext';
+import TripDetailsScreen from './screens/TripDetailsScreen';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -51,6 +53,7 @@ export type RootStackParamList = {
   AccommodationList: {
     accommodations: any[];
   };
+  TripDetails: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -70,29 +73,35 @@ export default function App() {
             <FavoritesProvider>
               <ReviewsProvider>
                 <ChatProvider>
-                  <NavigationContainer>
-                    <StatusBar style="dark" />
-                    <Stack.Navigator
-                      screenOptions={{
-                        headerShown: false,
-                      }}
-                    >
-                      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-                      <Stack.Screen name="Login" component={LoginScreen} />
-                      <Stack.Screen name="Register" component={RegisterScreen} />
-                      <Stack.Screen name="Main" component={MainScreen} />
-                      <Stack.Screen name="Destination" component={DestinationScreen} />
-                      <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
-                      <Stack.Screen name="Chat" component={ChatScreen} />
-                      <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
-                      <Stack.Screen name="Profile" component={ProfileScreen} />
-                      <Stack.Screen name="ChatList" component={ChatListScreen} />
-                      <Stack.Screen 
-                        name="AccommodationList" 
-                        component={AccommodationListScreen} 
-                      />
-                    </Stack.Navigator>
-                  </NavigationContainer>
+                  <TripProvider>
+                    <NavigationContainer>
+                      <StatusBar style="dark" />
+                      <Stack.Navigator
+                        screenOptions={{
+                          headerShown: false,
+                        }}
+                      >
+                        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                        <Stack.Screen name="Register" component={RegisterScreen} />
+                        <Stack.Screen name="Main" component={MainScreen} />
+                        <Stack.Screen name="Destination" component={DestinationScreen} />
+                        <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+                        <Stack.Screen name="Chat" component={ChatScreen} />
+                        <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
+                        <Stack.Screen name="Profile" component={ProfileScreen} />
+                        <Stack.Screen name="ChatList" component={ChatListScreen} />
+                        <Stack.Screen 
+                          name="AccommodationList" 
+                          component={AccommodationListScreen} 
+                        />
+                        <Stack.Screen 
+                          name="TripDetails" 
+                          component={TripDetailsScreen} 
+                        />
+                      </Stack.Navigator>
+                    </NavigationContainer>
+                  </TripProvider>
                 </ChatProvider>
               </ReviewsProvider>
             </FavoritesProvider>

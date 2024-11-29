@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -10,38 +10,43 @@ import {
   ScrollView,
   Linking,
   Alert,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../constants/theme';
-import BackButton from '../components/common/BackButton';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
-import NoDestinations from '../components/NoDestinations';
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { COLORS, SPACING } from "../constants/theme";
+import BackButton from "../components/common/BackButton";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../App";
+import NoDestinations from "../components/NoDestinations";
+import { AddToTripModal } from '../components/trip/AddToTripModal';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'AccommodationList'>;
+type Props = NativeStackScreenProps<RootStackParamList, "AccommodationList">;
 
 const ACCOMMODATION_TYPES = [
-  { id: 'all', label: 'All' },
-  { id: 'lodging', label: 'Hotels' },
-  { id: 'campground', label: 'Campgrounds' },
-  { id: 'rv_park', label: 'RV Parks' },
+  { id: "all", label: "All" },
+  { id: "lodging", label: "Hotels" },
+  { id: "campground", label: "Campgrounds" },
+  { id: "rv_park", label: "RV Parks" },
+  { id: "gas_station", label: "Gas Stations" },
+  { id: "restaurant", label: "Restaurants" },
 ];
 
 const RATING_FILTERS = [
-  { value: 0, label: 'All' },
-  { value: 4, label: '4+' },
-  { value: 3, label: '3+' },
-  { value: 2, label: '2+' },
+  { value: 0, label: "All" },
+  { value: 4, label: "4+" },
+  { value: 3, label: "3+" },
+  { value: 2, label: "2+" },
 ];
 
 export default function AccommodationListScreen({ route, navigation }: Props) {
   const { accommodations: initialAccommodations } = route.params;
-  const [selectedType, setSelectedType] = useState('all');
+  const [selectedType, setSelectedType] = useState("all");
   const [selectedRating, setSelectedRating] = useState(0);
-  
+  const [selectedAccommodation, setSelectedAccommodation] = useState<any>(null);
+  const [showAddToTripModal, setShowAddToTripModal] = useState(false);
+
   const filteredAccommodations = initialAccommodations
-    .filter(acc => selectedType === 'all' || acc.type === selectedType)
-    .filter(acc => acc.rating >= selectedRating);
+    .filter((acc) => selectedType === "all" || acc.type === selectedType)
+    .filter((acc) => acc.rating >= selectedRating);
 
   const handleWebsitePress = async (website: string | null) => {
     if (!website) {
@@ -58,28 +63,25 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
       if (supported) {
         await Linking.openURL(website);
       } else {
-        Alert.alert(
-          "Error",
-          "Cannot open this website",
-          [{ text: "OK" }]
-        );
+        Alert.alert("Error", "Cannot open this website", [{ text: "OK" }]);
       }
     } catch (error) {
       console.error("Error opening website:", error);
-      Alert.alert(
-        "Error",
-        "Failed to open website",
-        [{ text: "OK" }]
-      );
+      Alert.alert("Error", "Failed to open website", [{ text: "OK" }]);
     }
   };
 
+  const handleAccommodationPress = (accommodation: any) => {
+    setSelectedAccommodation(accommodation);
+    setShowAddToTripModal(true);
+  };
+
   const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.card}>
-      <Image
-        source={{ uri: item.image }}
-        style={styles.image}
-      />
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => handleAccommodationPress(item)}
+    >
+      <Image source={{ uri: item.image }} style={styles.image} />
       <View style={styles.cardContent}>
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.type}>
@@ -89,18 +91,18 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
           <Feather name="star" size={14} color={COLORS.primary} />
           <Text style={styles.rating}>{item.rating.toFixed(1)}</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.websiteButton}
           onPress={() => handleWebsitePress(item.website)}
         >
-          <Feather 
-            name="globe" 
-            size={14} 
-            color={COLORS.primary} 
+          <Feather
+            name="globe"
+            size={14}
+            color={COLORS.primary}
             style={styles.websiteIcon}
           />
           <Text style={styles.websiteText}>
-            {item.website ? 'Visit Website' : 'No Website Available'}
+            {item.website ? "Visit Website" : "No Website Available"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -109,10 +111,10 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
 
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <Feather 
-        name="search" 
-        size={48} 
-        color={COLORS.textLight} 
+      <Feather
+        name="search"
+        size={48}
+        color={COLORS.textLight}
         style={styles.emptyIcon}
       />
       <Text style={styles.emptyTitle}>No Places Found</Text>
@@ -133,8 +135,8 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
       <View style={styles.filtersContainer}>
         {/* Type Filter */}
         <Text style={styles.filterTitle}>Type</Text>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterScroll}
         >
@@ -147,10 +149,12 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
               ]}
               onPress={() => setSelectedType(type.id)}
             >
-              <Text style={[
-                styles.filterText,
-                selectedType === type.id && styles.filterTextActive,
-              ]}>
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedType === type.id && styles.filterTextActive,
+                ]}
+              >
                 {type.label}
               </Text>
             </TouchableOpacity>
@@ -159,8 +163,8 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
 
         {/* Rating Filter */}
         <Text style={styles.filterTitle}>Rating</Text>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterScroll}
         >
@@ -174,17 +178,23 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
               onPress={() => setSelectedRating(rating.value)}
             >
               <View style={styles.ratingFilterContent}>
-                <Text style={[
-                  styles.filterText,
-                  selectedRating === rating.value && styles.filterTextActive,
-                ]}>
+                <Text
+                  style={[
+                    styles.filterText,
+                    selectedRating === rating.value && styles.filterTextActive,
+                  ]}
+                >
                   {rating.label}
                 </Text>
                 {rating.value > 0 && (
-                  <Feather 
-                    name="star" 
-                    size={14} 
-                    color={selectedRating === rating.value ? COLORS.background : COLORS.textDark} 
+                  <Feather
+                    name="star"
+                    size={14}
+                    color={
+                      selectedRating === rating.value
+                        ? COLORS.background
+                        : COLORS.textDark
+                    }
                   />
                 )}
               </View>
@@ -196,13 +206,28 @@ export default function AccommodationListScreen({ route, navigation }: Props) {
       <FlatList
         data={filteredAccommodations}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.list,
-          filteredAccommodations.length === 0 && styles.emptyList
+          filteredAccommodations.length === 0 && styles.emptyList,
         ]}
         ListEmptyComponent={renderEmptyList}
       />
+
+      {selectedAccommodation && (
+        <AddToTripModal
+          visible={showAddToTripModal}
+          onClose={() => {
+            setShowAddToTripModal(false);
+            setSelectedAccommodation(null);
+          }}
+          location={{
+            id: selectedAccommodation.id,
+            name: selectedAccommodation.name,
+            type: selectedAccommodation.type,
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -213,14 +238,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: SPACING.md,
   },
   title: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
   },
   placeholder: {
@@ -231,7 +256,7 @@ const styles = StyleSheet.create({
   },
   filterTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
     marginLeft: SPACING.md,
     marginBottom: SPACING.xs,
@@ -262,8 +287,8 @@ const styles = StyleSheet.create({
     color: COLORS.background,
   },
   ratingFilterContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.xs,
   },
   list: {
@@ -273,15 +298,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: 12,
     marginBottom: SPACING.md,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 200,
   },
   cardContent: {
@@ -289,7 +314,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
     marginBottom: SPACING.xs,
   },
@@ -299,8 +324,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.xs,
     marginBottom: SPACING.xs,
   },
@@ -310,13 +335,13 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.primary,
   },
   emptyContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: SPACING.xl,
   },
   emptyIcon: {
@@ -324,23 +349,23 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
     marginBottom: SPACING.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyText: {
     fontSize: 14,
     color: COLORS.textLight,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   emptyList: {
     flexGrow: 1,
   },
   websiteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: SPACING.xs,
   },
   websiteIcon: {
@@ -349,6 +374,6 @@ const styles = StyleSheet.create({
   websiteText: {
     fontSize: 14,
     color: COLORS.primary,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
   },
-}); 
+});

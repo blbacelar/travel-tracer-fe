@@ -19,7 +19,13 @@ export const fetchNearbyAccommodations = async (
   try {
     console.log("fetchNearbyAccommodations", { latitude, longitude, radius });
 
-    const accommodationTypes = ["lodging", "campground", "rv_park"];
+    const accommodationTypes = [
+      "lodging",
+      "campground",
+      "rv_park",
+      "gas_station",
+      "restaurant",
+    ];
     let allResults: any[] = [];
 
     // Fetch places for each accommodation type
@@ -61,7 +67,7 @@ export const fetchNearbyAccommodations = async (
           const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=website&key=${ENV.GOOGLE_PLACES_API_KEY}`;
           const detailsResponse = await fetch(detailsUrl);
           const detailsData = await detailsResponse.json();
-          
+
           return {
             id: place.place_id,
             name: place.name,

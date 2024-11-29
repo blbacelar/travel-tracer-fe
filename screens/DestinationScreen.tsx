@@ -26,6 +26,7 @@ import CategoryFilter from "../components/CategoryFilter";
 import { useFavorites } from "../context/FavoritesContext";
 import ReviewSection from "../components/destination/ReviewSection";
 import ShareModal from '../components/common/ShareModal';
+import { CreateTripModal } from '../components/trip/CreateTripModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, "Destination">;
 
@@ -34,6 +35,7 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
   const { isFavorite, toggleFavorite } = useFavorites();
   const scrollY = new Animated.Value(0);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCreateTrip, setShowCreateTrip] = useState(false);
 
   const locationId = `${location.city}-${location.latitude}-${location.longitude}`;
 
@@ -125,7 +127,10 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
         <EventsList location={location} />
 
         {/* Start Trip Button */}
-        <TouchableOpacity style={styles.startTripButton}>
+        <TouchableOpacity 
+          style={styles.startTripButton}
+          onPress={() => setShowCreateTrip(true)}
+        >
           <Text style={styles.startTripText}>Start Planning Trip</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -135,6 +140,11 @@ const DestinationScreen: React.FC<Props> = ({ navigation, route }) => {
         onClose={() => setShowShareModal(false)}
         title={`Visit ${location.city}`}
         message={`Check out ${location.city} on Travel Tracer! A beautiful destination in ${location.country}.`}
+      />
+
+      <CreateTripModal
+        visible={showCreateTrip}
+        onClose={() => setShowCreateTrip(false)}
       />
     </SafeAreaView>
   );

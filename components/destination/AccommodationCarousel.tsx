@@ -21,6 +21,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
+import { AddToTripModal } from '../trip/AddToTripModal';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -38,6 +39,8 @@ const AccommodationCarousel: React.FC<AccommodationCarouselProps> = ({
   const [accommodations, setAccommodations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAccommodation, setSelectedAccommodation] = useState<any>(null);
+  const [showAddToTripModal, setShowAddToTripModal] = useState(false);
 
   useEffect(() => {
     const fetchAccommodations = async () => {
@@ -89,6 +92,11 @@ const AccommodationCarousel: React.FC<AccommodationCarouselProps> = ({
     }
   };
 
+  const handleAccommodationPress = (accommodation: any) => {
+    setSelectedAccommodation(accommodation);
+    setShowAddToTripModal(true);
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -131,6 +139,7 @@ const AccommodationCarousel: React.FC<AccommodationCarouselProps> = ({
           <TouchableOpacity
             key={accommodation.id}
             style={styles.accommodationCard}
+            onPress={() => handleAccommodationPress(accommodation)}
           >
             <Image
               source={{ uri: accommodation.image }}
@@ -163,6 +172,21 @@ const AccommodationCarousel: React.FC<AccommodationCarouselProps> = ({
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {selectedAccommodation && (
+        <AddToTripModal
+          visible={showAddToTripModal}
+          onClose={() => {
+            setShowAddToTripModal(false);
+            setSelectedAccommodation(null);
+          }}
+          location={{
+            id: selectedAccommodation.id,
+            name: selectedAccommodation.name,
+            type: selectedAccommodation.type,
+          }}
+        />
+      )}
     </View>
   );
 };

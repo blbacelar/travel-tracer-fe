@@ -41,6 +41,12 @@ const Header = () => {
         <TouchableOpacity style={styles.iconButton}>
           <Feather name="bell" size={24} color={COLORS.textDark} />
         </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.iconButton}
+          onPress={() => navigation.navigate('TripDetails')}
+        >
+          <Feather name="calendar" size={24} color={COLORS.textDark} />
+        </TouchableOpacity>
       </View>
     </View>
   );
