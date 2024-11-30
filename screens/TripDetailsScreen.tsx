@@ -18,8 +18,17 @@ import { RootStackParamList } from '../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'TripDetails'>;
 
 const TripDetailsScreen = ({ navigation }: Props) => {
-  const { currentTrip } = useTrip();
+  const { currentTrip, deleteLocation } = useTrip();
   const [showCreateTrip, setShowCreateTrip] = useState(false);
+
+  const calculateBalance = () => {
+    if (!currentTrip) return 0;
+    return currentTrip.budget - currentTrip.expenses;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString()}`;
+  };
 
   if (!currentTrip) {
     return (
@@ -75,6 +84,13 @@ const TripDetailsScreen = ({ navigation }: Props) => {
       {item.notes && (
         <Text style={styles.notes}>{item.notes}</Text>
       )}
+
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => deleteLocation(item.id)}
+      >
+        <Text style={styles.deleteButtonText}>Delete</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -87,7 +103,7 @@ const TripDetailsScreen = ({ navigation }: Props) => {
       </View>
 
       <View style={styles.tripInfo}>
-        <Text style={styles.tripName}>{currentTrip.name}</Text>
+        <Text style={styles.tripName}>{currentTrip?.name}</Text>
         <View style={styles.tripDates}>
           <Feather name="calendar" size={16} color={COLORS.primary} />
           <Text style={styles.tripDatesText}>
@@ -98,7 +114,9 @@ const TripDetailsScreen = ({ navigation }: Props) => {
         <View style={styles.budgetContainer}>
           <View style={styles.budgetItem}>
             <Text style={styles.budgetLabel}>Budget</Text>
-            <Text style={styles.budgetValue}>${currentTrip.budget}</Text>
+            <Text style={styles.budgetValue}>
+              {formatCurrency(currentTrip.budget)}
+            </Text>
           </View>
           <View style={styles.budgetItem}>
             <Text style={styles.budgetLabel}>Spent</Text>
@@ -106,7 +124,16 @@ const TripDetailsScreen = ({ navigation }: Props) => {
               styles.budgetValue,
               currentTrip.expenses > currentTrip.budget && styles.overBudget
             ]}>
-              ${currentTrip.expenses}
+              {formatCurrency(currentTrip.expenses)}
+            </Text>
+          </View>
+          <View style={styles.budgetItem}>
+            <Text style={styles.budgetLabel}>Balance</Text>
+            <Text style={[
+              styles.budgetValue,
+              calculateBalance() < 0 && styles.overBudget
+            ]}>
+              {formatCurrency(calculateBalance())}
             </Text>
           </View>
         </View>
@@ -170,9 +197,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   budgetItem: {
     alignItems: 'center',
+    flex: 1,
   },
   budgetLabel: {
     fontSize: 14,
@@ -180,7 +210,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   budgetValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: COLORS.textDark,
   },
@@ -255,6 +285,17 @@ const styles = StyleSheet.create({
   buttonText: {
     color: COLORS.background,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    backgroundColor: COLORS.error,
+    padding: SPACING.sm,
+    borderRadius: 8,
+    marginTop: SPACING.sm,
+  },
+  deleteButtonText: {
+    color: COLORS.background,
+    textAlign: 'center',
     fontWeight: '600',
   },
 });

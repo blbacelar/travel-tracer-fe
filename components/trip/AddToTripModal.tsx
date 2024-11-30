@@ -91,14 +91,21 @@ export const AddToTripModal: React.FC<AddToTripModalProps> = ({
       return;
     }
 
-    addLocation({
+    // Log for debugging
+    console.log('Adding location with cost:', cost);
+    
+    const locationToAdd = {
       ...location,
       startDate,
       endDate: isSingleDayLocation ? startDate : endDate,
-      cost: cost ? Number(cost) : undefined,
+      cost: cost ? Number(cost) : undefined,  // Make sure cost is converted to number
       notes,
-    });
+    };
 
+    // Log the full location object
+    console.log('Full location object:', locationToAdd);
+
+    addLocation(locationToAdd);
     onClose();
   };
 
